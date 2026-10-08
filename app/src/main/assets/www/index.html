@@ -1307,12 +1307,53 @@ function setupChips(id,onChange,single,preselect,preSet){
 }
 
 /* ---- Klassieke kaart ---- */
+
+/* ---- Bijzonderheden: notities, gemoedstand en gestoorde metingen per dag ---- */
+function escHtml(t){ return String(t).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function bijzonderheden(cycle){
+  const out=[];
+  cycle.days.forEach((d,i)=>{
+    const opt = d.gemoedstand ? GEMOEDSTAND_OPTIES.find(o=>o.value===d.gemoedstand) : null;
+    const emoji = opt ? opt.label.split(' ')[0] : (d.gestoord ? '⚠️' : '');
+    const stemming = opt ? opt.label.slice(opt.label.split(' ')[0].length).trim() : '';
+    const note = (d.note||'').trim();
+    if(!note && !opt && !d.gestoord) return;
+    const delen=[];
+    if(d.gestoord) delen.push('meting gestoord');
+    if(stemming) delen.push(stemming);
+    if(note) delen.push(note);
+    out.push({ dag:i+1, date:d.date, emoji, tekst:delen.join(' · ') });
+  });
+  return out;
+}
+function renderNotes(cycle){
+  let card=document.getElementById('notesCard');
+  if(!card){
+    card=document.createElement('div');
+    card.className='card'; card.id='notesCard';
+    const kaartCard=document.getElementById('kaartOuter').closest('.card');
+    kaartCard.parentNode.insertBefore(card, kaartCard.nextSibling);
+  }
+  const items=bijzonderheden(cycle);
+  let h='<h2><span class="emoji">📝</span> Bijzonderheden</h2>';
+  if(!items.length){
+    h+='<p class="muted" style="font-size:0.8rem; margin:4px 0;">Nog geen notities of bijzonderheden in deze cyclus.</p>';
+  } else {
+    h+=items.map((it,idx)=>`<div style="display:grid; grid-template-columns:62px 1fr; gap:10px; padding:9px 0; ${idx? 'border-top:1px solid var(--line);':''}">
+        <div style="font-size:0.78rem; line-height:1.3;"><b style="color:var(--plum-dark);">Dag ${it.dag}</b><br><span class="muted">${fmtDate(it.date)}</span></div>
+        <div style="font-size:0.84rem; line-height:1.45;">${it.emoji? it.emoji+' ' : ''}${escHtml(it.tekst)}</div>
+      </div>`).join('');
+  }
+  card.innerHTML=h;
+}
+
 function renderKaart(){
   const cycle=currentCycle();
   document.getElementById('kaartTitle').textContent=
     `Cycluskaart — cyclus ${cycle.nummer} (start ${fmtDate(cycle.startDate)})`;
   renderInterpretation(cycle);
   buildKaart(cycle);
+  renderNotes(cycle);
   renderDayEditList(cycle);
 }
 function renderInterpretation(cycle){
@@ -2143,7 +2184,27 @@ function drawExportCanvas(cycle){
   ];
   const tableH=rowDefs.reduce((a,r)=>a+r.h,0);
   const headerH=46;
-  const W=labelW+n*dayW+20, H=headerH+chartH+tableH+20;
+  const W=labelW+n*dayW+20;
+  // Bijzonderheden onder de tabel: regels vooraf afbreken om de hoogte te weten.
+  const notes=bijzonderheden(cycle);
+  const meet=document.createElement('canvas').getContext('2d');
+  meet.font='10px sans-serif';
+  const noteLines=[];
+  const tekstX=labelW, maxW=W-tekstX-16;
+  notes.forEach(it=>{
+    const woorden=((it.emoji? it.emoji+' ' : '')+it.tekst).split(' ');
+    let regel='', eerste=true;
+    woorden.forEach(w=>{
+      const test=regel? regel+' '+w : w;
+      if(meet.measureText(test).width>maxW && regel){
+        noteLines.push({kop: eerste? `Dag ${it.dag} · ${fmtDate(it.date)}` : '', tekst:regel});
+        regel=w; eerste=false;
+      } else regel=test;
+    });
+    noteLines.push({kop: eerste? `Dag ${it.dag} · ${fmtDate(it.date)}` : '', tekst:regel});
+  });
+  const notesH = noteLines.length ? 34 + noteLines.length*14 : 0;
+  const H=headerH+chartH+tableH+20+notesH;
   const SC=2; // scherpte
   const cv=document.createElement('canvas');
   cv.width=W*SC; cv.height=H*SC;
@@ -2241,6 +2302,19 @@ function drawExportCanvas(cycle){
       ctx.textAlign='left';
     }
     y0+=row.h;
+  }
+  if(noteLines.length){
+    let y=y0+26;
+    ctx.textAlign='left';
+    ctx.fillStyle='#5B3A4B'; ctx.font='bold 12px Georgia';
+    ctx.fillText('Bijzonderheden', 12, y);
+    y+=16;
+    noteLines.forEach(l=>{
+      if(l.kop){ ctx.fillStyle='#5B3A4B'; ctx.font='bold 9.5px sans-serif'; ctx.fillText(l.kop, 12, y); }
+      ctx.fillStyle='#2E2430'; ctx.font='10px sans-serif';
+      ctx.fillText(l.tekst, tekstX, y);
+      y+=14;
+    });
   }
   return cv;
 }
