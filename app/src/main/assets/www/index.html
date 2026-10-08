@@ -954,6 +954,7 @@ function computePeakDay(cycle){
   if(!hasFollowUp) return null; // nog geen bevestiging — piekdag nog niet aanwijsbaar
   return { index:peakIdx, rank:maxRank };
 }
+function bmHoogteSym(d){ return d.bmHoogte==='hoog'?'↑':(d.bmHoogte==='laag'?'↓':(d.bmHoogte==='midden'?'–':'')); }
 function computeBMHClosed(cycle){
   const ds=cycle.days;
   for(let i=2;i<ds.length;i++){
@@ -1210,6 +1211,9 @@ function renderVandaag(editIdx=null){
     <div class="chip-row" id="f_bmhard" style="margin-top:6px;">
       <div class="chip" data-v="hard">hard</div><div class="chip" data-v="zacht">zacht</div>
     </div>
+    <div class="chip-row" id="f_bmhoogte" style="margin-top:6px;">
+      <div class="chip" data-v="laag">laag ↓</div><div class="chip" data-v="midden">midden</div><div class="chip" data-v="hoog">hoog ↑</div>
+    </div>
 
     <div class="form-sec"><span class="emoji">✨</span> Overig</div>
     <div class="chip-row" id="f_extra">
@@ -1227,11 +1231,12 @@ function renderVandaag(editIdx=null){
   </div>`;
 
   const state={ bloeding:day?day.bloeding:'', bmopen:day?day.bmOpening:null,
-    bmhard:day?day.bmStevigheid:null,
+    bmhard:day?day.bmStevigheid:null, bmhoogte:day?(day.bmHoogte||null):null,
     extra:new Set(day&&day.extra? day.extra.split(','):[]) };
   setupChips('f_bloeding', v=>state.bloeding=v, true, state.bloeding);
   setupChips('f_bmopen', v=>state.bmopen=(state.bmopen===v?null:v), true, state.bmopen);
   setupChips('f_bmhard', v=>state.bmhard=(state.bmhard===v?null:v), true, state.bmhard);
+  setupChips('f_bmhoogte', v=>state.bmhoogte=(state.bmhoogte===v?null:v), true, state.bmhoogte);
   setupChips('f_extra', v=>{ state.extra.has(v)?state.extra.delete(v):state.extra.add(v); }, false, null, state.extra);
 
   // Cervixslijm dropdowns + afleiding
@@ -1271,7 +1276,7 @@ function renderVandaag(editIdx=null){
       uiterlijkSel:uitVal||null,
       cervixAfk:deriveAfkorting(ervVal, uitVal),
       uiterlijk:document.getElementById('f_uiterlijk').value||'',
-      bmOpening:state.bmopen||null, bmStevigheid:state.bmhard||null,
+      bmOpening:state.bmopen||null, bmStevigheid:state.bmhard||null, bmHoogte:state.bmhoogte||null,
       extra:[...state.extra].join(','),
       gemoedstand:document.getElementById('f_gemoedstand').value||'',
       note:document.getElementById('f_note').value||''
@@ -1360,7 +1365,7 @@ function buildKaartInto(targetId, cycle){
     bloeding:"Menstruatie of bloeding. Bloedingsdagen worden nooit als vruchtbaar gemarkeerd.",
     ervaren:"Wat je voelt bij de schaamlippen: droog, vochtig, nat, glibberig. Dit is de helft van je cervixslijm-observatie.",
     uiterlijk:"Wat je ziet: kleur, structuur, rekbaarheid. Samen met het gevoel bepaalt dit de slijmkwaliteit.",
-    bmh:"De baarmoederhals als optionele dubbele controle. Symbolen: • gesloten, ○ deels open, ◯ open. Met h (hard) of z (zacht). Rond de eisprong: zacht, open, hoog.",
+    bmh:"De baarmoederhals als optionele dubbele controle. Symbolen: • gesloten, ○ deels open, ◯ open. Met h (hard) of z (zacht), en ↑ hoog, – midden, ↓ laag. Rond de eisprong: zacht, open, hoog.",
     extra:"O = ovulatiepijn, B = borstsymptoom, X = gemeenschap. Extra signalen die je kunt noteren.",
     vrucht:"De interpretatie van de app: v = vruchtbaar, v/ = laatste vruchtbare dag (einde vruchtbare periode na dubbele controle)."
   };
@@ -1409,8 +1414,8 @@ function buildKaartInto(targetId, cycle){
           case 'bmh':
             if(d.bmOpening){
               const sym=d.bmOpening==='gesloten'?'•':(d.bmOpening==='deels'?'○':'◯');
-              content=sym+(d.bmStevigheid? (d.bmStevigheid==='hard'?'h':'z') :'');
-            }
+              content=sym+(d.bmStevigheid? (d.bmStevigheid==='hard'?'h':'z') :'')+bmHoogteSym(d);
+            } else if(d.bmHoogte){ content=bmHoogteSym(d); }
             break;
           case 'extra': content=(d.extra||'').replaceAll(',',' '); break;
           case 'vrucht':
@@ -2226,7 +2231,7 @@ function drawExportCanvas(cycle){
           break;
         case 'bmh':
           if(d.bmOpening){ const sym=d.bmOpening==='gesloten'?'●':(d.bmOpening==='deels'?'○':'◯');
-            ctx.fillText(sym+(d.bmStevigheid?(d.bmStevigheid==='hard'?'h':'z'):''),cx,cy); }
+            ctx.fillText(sym+(d.bmStevigheid?(d.bmStevigheid==='hard'?'h':'z'):'')+bmHoogteSym(d),cx,cy); }
           break;
         case 'extra': if(d.extra) ctx.fillText(d.extra.replaceAll(',',' '),cx,cy); break;
         case 'vrucht': { const f=dayFertility(i,start,end,d);
@@ -2269,7 +2274,7 @@ function buildCycleText(cycle){
   lines.push('');
   lines.push('Dag | Datum | Temp | Slijm | BMH | Bloeding | Gem.');
   cycle.days.forEach((d,i)=>{
-    const bmh=d.bmOpening? (d.bmOpening[0]+'/'+(d.bmStevigheid||'?')) : '-';
+    const bmh=d.bmOpening? (d.bmOpening[0]+'/'+(d.bmStevigheid||'?')+(d.bmHoogte?'/'+d.bmHoogte:'')) : '-';
     lines.push([
       i+1, fmtDate(d.date),
       d.temp? (d.temp+(d.gestoord?'*':'')) : '-',
