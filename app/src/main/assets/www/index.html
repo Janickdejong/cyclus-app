@@ -237,6 +237,7 @@
   #logoutBtn{background:rgba(255,255,255,0.15); border:none; color:#fff; font-size:0.72rem;
     padding:5px 10px; border-radius:12px; cursor:pointer; margin-top:6px;}
   #authOverlay, #logoutBtn{display:none !important;}
+  td.toekomst{opacity:0.45;}
 </style>
 </head>
 <body>
@@ -891,7 +892,8 @@ async function saveData(){
   }
 }
 function todayISO(){ return new Date().toISOString().slice(0,10); }
-function addDays(iso,n){ const d=new Date(iso+'T00:00:00'); d.setDate(d.getDate()+n); return d.toISOString().slice(0,10); }
+// Rekent met kalenderdagen in UTC, zodat de Nederlandse tijdzone (en zomertijd) geen dag verschuift.
+function addDays(iso,n){ const d=new Date(iso+'T00:00:00Z'); d.setUTCDate(d.getUTCDate()+n); return d.toISOString().slice(0,10); }
 function fmtDate(iso){ const d=new Date(iso+'T00:00:00');
   return d.toLocaleDateString('nl-NL',{day:'numeric',month:'short'}); }
 function fmtDateLong(iso){ const d=new Date(iso+'T00:00:00');
@@ -1371,6 +1373,13 @@ function renderInterpretation(cycle){
     h+=`<p style="margin:6px 0;"><b style="color:var(--sage-dark);">Onvruchtbaar vanaf avond dag ${end.combined+1}</b> (${end.basis}, wat het laatst komt).</p>`;
   box.innerHTML=h;
 }
+/** Datum van kolom i: ingevulde dag, of doorgeteld vanaf de laatste ingevulde dag. */
+function colDate(cycle, i){
+  const ds=cycle.days;
+  if(ds[i]) return ds[i].date;
+  if(ds.length) return addDays(ds[ds.length-1].date, i-(ds.length-1));
+  return addDays(cycle.startDate, i);
+}
 function buildKaart(cycle){ buildKaartInto('kaartOuter', cycle); }
 function buildKaartInto(targetId, cycle){
   const axisId = targetId==='kaartOuter' ? 'axisCanvas' : targetId+'_axisCanvas';
@@ -1430,6 +1439,8 @@ function buildKaartInto(targetId, cycle){
       const d=days[i];
       let cls='', content='';
       if(i===start.lastSafeDay-1 && start.lastSafeDay>0) cls+=' streep-r';
+      if(!d && row.key==='dagnr'){ content=i+1; cls+=' toekomst'; }
+      if(!d && row.key==='datum'){ content=fmtDate(colDate(cycle,i)).replace(' ',''); cls+=' toekomst'; }
       if(d){
         switch(row.key){
           case 'piek':
@@ -2262,7 +2273,16 @@ function drawExportCanvas(cycle){
     for(let i=0;i<n;i++){
       const x=labelW+i*dayW;
       ctx.strokeStyle='#EDE2DB'; ctx.strokeRect(x,y0,dayW,row.h);
-      const d=days[i]; if(!d) continue;
+      const d=days[i];
+      if(!d){
+        // Nog niet ingevulde dag: wel cyclusdag en datum, in grijs.
+        ctx.fillStyle='#A99BA3'; ctx.textAlign='center';
+        const cx=x+dayW/2, cy=y0+row.h/2+3;
+        if(row.key==='dagnr'){ ctx.font='9px sans-serif'; ctx.fillText(String(i+1),cx,cy); }
+        if(row.key==='datum'){ ctx.font='7.5px sans-serif'; ctx.fillText(fmtDate(colDate(cycle,i)),cx,cy); }
+        ctx.textAlign='left';
+        continue;
+      }
       ctx.fillStyle='#2E2430'; ctx.font='9px sans-serif'; ctx.textAlign='center';
       const cx=x+dayW/2, cy=y0+row.h/2+3;
       switch(row.key){
