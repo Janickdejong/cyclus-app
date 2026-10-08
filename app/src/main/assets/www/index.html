@@ -1,0 +1,2842 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cyclus · Sensiplan</title>
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Cyclus">
+<meta name="theme-color" content="#5B3A4B">
+<link rel="manifest" id="pwaManifest">
+<link rel="apple-touch-icon" id="appleTouchIcon">
+<link href="fonts/fonts.css" rel="stylesheet">
+<link rel="manifest" href="data:application/json;charset=utf-8,%7B%22name%22%3A%22Cyclus%20%C2%B7%20Sensiplan%22%2C%22short_name%22%3A%22Cyclus%22%2C%22start_url%22%3A%22.%2F%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23FBF6F1%22%2C%22theme_color%22%3A%22%235B3A4B%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage%2Fsvg%2Bxml%2C%253Csvg%2520xmlns%3D%2527http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%2527%2520viewBox%3D%25270%25200%2520100%2520100%2527%253E%253Ccircle%2520cx%3D%252750%2527%2520cy%3D%252750%2527%2520r%3D%252750%2527%2520fill%3D%2527%25235B3A4B%2527%2F%253E%253Ctext%2520x%3D%252750%2527%2520y%3D%252768%2527%2520font-size%3D%252760%2527%2520text-anchor%3D%2527middle%2527%253E%25F0%259F%258C%25BF%253C%2Ftext%253E%253C%2Fsvg%253E%22%2C%22sizes%22%3A%22any%22%2C%22type%22%3A%22image%2Fsvg%2Bxml%22%7D%5D%7D">
+<script src="lib/jspdf.umd.min.js"></script>
+<style>
+  :root{
+    --plum:#5B3A4B; --plum-dark:#3E2735; --rose:#C97B84; --cream:#FBF6F1;
+    --sage:#7C9A82; --sage-dark:#4E6B54; --ink:#2E2430; --line:#E4D6CE;
+    --danger:#B85C5C; --amber:#B8860B;
+    --bg:#FBF6F1; --surface:#ffffff; --text:#2E2430; --text-soft:#6b5b64;
+    --input-bg:#FEFCFA; --nav-bg:#FBF6F1; --rowlabel:#F7EFEA; --gridline:#EDE2DB;
+  }
+  body.dark{
+    --bg:#1C1620; --surface:#2A2230; --text:#EDE4EA; --text-soft:#B8A9B4;
+    --input-bg:#332A3A; --nav-bg:#1C1620; --rowlabel:#332A3A; --gridline:#3E3446;
+    --line:#3E3446; --plum-dark:#E0BFD0; --cream:#1C1620;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--bg); color:var(--text);
+    font-family:"Avenir Next","Segoe UI",sans-serif; padding-bottom:80px; transition:background .25s;
+    background-image:radial-gradient(circle at 15% 8%, rgba(201,123,132,0.05), transparent 42%),
+      radial-gradient(circle at 88% 22%, rgba(124,154,130,0.05), transparent 40%);
+    background-attachment:fixed;}
+  header{background:linear-gradient(135deg,var(--plum),var(--plum-dark));
+    color:#fff; padding:20px 18px 18px; border-radius:0 0 24px 24px;
+    display:flex; justify-content:space-between; align-items:flex-start;
+    box-shadow:0 4px 20px rgba(62,39,53,0.18);}
+  body.dark header{background:linear-gradient(135deg,#3E2735,#241723);}
+  header h1{font-family:'Fraunces',Georgia,serif; margin:0; font-size:1.6rem; font-weight:600; letter-spacing:0.3px;}
+  header .sub{font-size:0.78rem; opacity:0.82; margin-top:2px; letter-spacing:0.2px;}
+  #settingsBtn{background:rgba(255,255,255,0.15); border:none; color:#fff;
+    width:40px; height:40px; border-radius:50%; cursor:pointer; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;}
+  nav{display:flex; gap:5px; padding:10px 10px; position:sticky; top:0;
+    background:var(--nav-bg); z-index:20; border-bottom:1px solid var(--line);
+    max-width:640px; margin:0 auto;}
+  nav button{flex:1; padding:9px 2px; border:none; border-radius:12px;
+    background:transparent; color:var(--plum-dark); font-weight:600; font-size:0.8rem; cursor:pointer;
+    letter-spacing:0.2px; transition:background .15s;}
+  nav button.active{background:var(--plum); color:#fff;}
+  main{padding:14px; max-width:640px; margin:0 auto;}
+  section{display:none;} section.active{display:block;}
+  .card{background:var(--surface); border-radius:18px; padding:17px; margin-bottom:13px;
+    box-shadow:0 3px 16px rgba(91,58,75,0.09);}
+  .card h2{margin:0 0 11px; font-size:1.08rem; color:var(--plum-dark);
+    font-family:'Fraunces',Georgia,serif; font-weight:600; letter-spacing:0.2px;}
+  label{display:block; font-size:0.76rem; color:var(--text-soft); margin:10px 0 4px; font-weight:600;}
+  input,select,textarea{width:100%; padding:11px 12px; border-radius:12px;
+    border:1px solid var(--line); background:var(--input-bg); color:var(--text); font-size:0.95rem; font-family:inherit;
+    transition:border-color .15s, box-shadow .15s;}
+  input:focus,select:focus,textarea:focus{outline:none; border-color:var(--rose);
+    box-shadow:0 0 0 3px rgba(201,123,132,0.13);}
+  textarea{resize:vertical; min-height:40px;}
+  .row{display:flex; gap:10px;} .row>div{flex:1;}
+  .chip-row{display:flex; gap:7px; flex-wrap:wrap; margin-top:3px;}
+  .chip{padding:8px 13px; border-radius:20px; border:1px solid var(--line);
+    background:var(--input-bg); color:var(--text); font-size:0.8rem; cursor:pointer; user-select:none;
+    transition:background .12s, border-color .12s;}
+  .chip.sel{background:var(--rose); color:#fff; border-color:var(--rose); font-weight:600;}
+  .form-sec{font-size:0.82rem; font-weight:700; color:var(--plum-dark); margin:20px 0 8px;
+    padding-top:14px; border-top:1px solid var(--line); letter-spacing:0.2px;}
+  .form-sec:first-of-type{border-top:none; padding-top:0; margin-top:16px;}
+  /* Emoji-iconen gedempt zodat ze niet fel afsteken tegen het warme palet */
+  .emoji{filter:grayscale(0.55) opacity(0.75); font-size:0.92em; margin-right:2px;}
+  .pinkey{width:64px; height:64px; border-radius:50%; border:1px solid rgba(255,255,255,0.35);
+    background:rgba(255,255,255,0.1); color:#fff; font-size:1.4rem; font-family:'Fraunces',serif;
+    cursor:pointer; margin:0 auto; transition:background .1s;}
+  .pinkey:active{background:rgba(255,255,255,0.3);}
+  .pindot{width:14px; height:14px; border-radius:50%; border:2px solid rgba(255,255,255,0.6);
+    display:inline-block; transition:background .1s;}
+  .pindot.filled{background:#fff;}
+  button.primary{width:100%; margin-top:14px; padding:14px; border:none; border-radius:14px;
+    background:linear-gradient(135deg,var(--plum),var(--plum-dark)); color:#fff;
+    font-size:0.95rem; font-weight:600; cursor:pointer; letter-spacing:0.3px;
+    box-shadow:0 3px 12px rgba(91,58,75,0.22); transition:transform .1s;}
+  button.primary:active{transform:scale(0.98);}
+  body.dark button.primary{background:linear-gradient(135deg,#7A5266,#5B3A4B); color:#fff;}
+  button.secondary{width:100%; margin-top:8px; padding:11px; border:1px solid var(--line);
+    border-radius:14px; background:var(--surface); color:var(--plum-dark); font-size:0.85rem; font-weight:600; cursor:pointer;}
+  .note{font-size:0.75rem; color:var(--text-soft); margin-top:6px; line-height:1.5;}
+  .muted{color:var(--text-soft); font-size:0.78rem;}
+  .warn{background:#FCEFD8; border:1px solid #EAD3A0; border-radius:12px;
+    padding:11px 13px; font-size:0.78rem; color:#7A5C1F; margin-bottom:10px; line-height:1.5;}
+  body.dark .warn{background:#3A3020; border-color:#5C4A28; color:#E8C97A;}
+
+  /* Status hero */
+  .status-hero{border-radius:16px; padding:18px 16px; margin-bottom:12px; color:#fff;}
+  .status-hero.vrucht{background:linear-gradient(135deg,#C05C6B,#9E3F52);}
+  .status-hero.onvrucht{background:linear-gradient(135deg,#6E9276,#4E6B54);}
+  .status-hero.onbekend{background:linear-gradient(135deg,#9A8B93,#7A6B74);}
+  .status-hero .big{font-size:1.25rem; font-weight:700; font-family:'Fraunces',Georgia,serif;}
+  .status-hero .why{font-size:0.8rem; opacity:0.92; margin-top:5px; line-height:1.45;}
+
+  /* Gestoord toggle */
+  .toggle-row{display:flex; align-items:center; justify-content:space-between;
+    padding:9px 0; margin-top:6px;}
+  .toggle-row span{font-size:0.82rem; font-weight:600; color:#6b5b64;}
+  .switch{position:relative; width:46px; height:26px; flex-shrink:0;}
+  .switch input{display:none;}
+  .slider{position:absolute; inset:0; background:#D8CCC5; border-radius:26px; transition:.2s; cursor:pointer;}
+  .slider:before{content:""; position:absolute; width:20px; height:20px; border-radius:50%;
+    background:#fff; top:3px; left:3px; transition:.2s;}
+  .switch input:checked + .slider{background:var(--amber);}
+  .switch input:checked + .slider:before{transform:translateX(20px);}
+
+  /* Klassieke kaart */
+  .kaart-outer{overflow-x:auto; border:1px solid var(--line); border-radius:10px; background:var(--surface);
+    -webkit-overflow-scrolling:touch;}
+  .kaart-inner{position:relative;}
+  .chart-row{display:flex; align-items:flex-start;}
+  .axis-canvas{position:sticky; left:0; z-index:4; background:var(--surface); flex-shrink:0;}
+  table.kaart{border-collapse:collapse; font-size:0.62rem; table-layout:fixed; color:var(--text);}
+  table.kaart td, table.kaart th{border:1px solid var(--gridline); padding:1px 2px; text-align:center;
+    height:19px; width:30px; min-width:30px; max-width:30px; overflow:hidden; white-space:nowrap;}
+  table.kaart th.rowlabel{position:sticky; left:0; background:var(--rowlabel); z-index:3;
+    width:78px; min-width:78px; max-width:78px; font-size:0.6rem; text-align:right; padding-right:5px;
+    color:var(--text-soft); white-space:normal; line-height:1.15;}
+  table.kaart td.slijmcell{writing-mode:vertical-rl; transform:rotate(180deg);
+    height:76px; font-size:0.58rem; white-space:nowrap; text-align:left; padding:2px 0;}
+  td.gestoord{color:var(--amber); font-style:italic;}
+  td.bloed{background:repeating-linear-gradient(90deg,#C05C6B 0 2px,#fff 2px 4px);}
+  td.bloed-licht{background:radial-gradient(circle,#C05C6B 1px,transparent 1.4px); background-size:6px 6px;}
+  td.vrucht-v{color:var(--danger); font-weight:700;}
+  td.rise{color:var(--rose); font-weight:700;}
+  td.streep-r{border-right:2.5px solid var(--plum-dark) !important;}
+  /* Slijm-afkorting kleuren */
+  td.sq-d{background:#F0E9E4; color:#8a7a6a; font-weight:700;} body.dark td.sq-d{background:#332A3A; color:#B8A9B4;}
+  td.sq-0{background:#E8E0DA; color:#8a7a6a; font-weight:700;} body.dark td.sq-0{background:#332A3A; color:#B8A9B4;}
+  td.sq-v{background:#E0ECE2; color:#4E6B54; font-weight:700;} body.dark td.sq-v{background:#2A3A2E; color:#A8C9B0;}
+  td.sq-S{background:#FCE8D8; color:#9A6030; font-weight:700;} body.dark td.sq-S{background:#3A2E22; color:#E8C090;}
+  td.sq-Sp{background:#F3C9CF; color:#7A3040; font-weight:700;} body.dark td.sq-Sp{background:#5A2030; color:#F3C9CF;}
+  .canvas-scroll{position:relative;}
+  .yaxis{position:sticky; left:0; z-index:4; background:linear-gradient(90deg,#fff 80%,transparent);}
+
+  .cyclelist .citem{display:flex; justify-content:space-between; align-items:center;
+    padding:11px 4px; border-bottom:1px solid var(--line); cursor:pointer;}
+  .cyclelist .citem:last-child{border-bottom:none;}
+  .cyclelist b{color:var(--plum-dark);}
+  .fab-add{position:fixed; right:18px; bottom:18px; width:58px; height:58px; border-radius:50%;
+    background:linear-gradient(135deg,#D68A93,#C05C6B); color:#fff; font-size:1.8rem; border:none;
+    box-shadow:0 5px 18px rgba(192,92,107,0.4); cursor:pointer; z-index:30; line-height:1;
+    transition:transform .12s;}
+  .fab-add:active{transform:scale(0.9);}
+  .daylist-item{display:flex; justify-content:space-between; padding:8px 2px;
+    border-bottom:1px solid var(--line); font-size:0.82rem; align-items:center;}
+  .daylist-item button{border:none; background:none; color:var(--plum); font-size:0.75rem;
+    cursor:pointer; text-decoration:underline; padding:4px;}
+  /* Begroeting / bijbeltekst */
+  .greeting-card{position:relative; overflow:hidden;
+    background:linear-gradient(150deg,#fff,var(--cream));
+    border:1px solid var(--line); color:var(--text);
+    border-radius:18px; padding:22px 20px; margin-bottom:13px;
+    box-shadow:0 3px 16px rgba(91,58,75,0.09);}
+  body.dark .greeting-card{background:linear-gradient(150deg,#2A2230,#241b28); border-color:var(--line);}
+  .greeting-card .bloem-wm{position:absolute; right:-24px; top:-24px; width:130px; height:130px;
+    opacity:0.07; pointer-events:none;}
+  .greeting-hi{font-size:0.9rem; color:var(--text-soft); margin-bottom:12px; font-weight:600; letter-spacing:0.2px;}
+  .greeting-verse{font-family:'Cormorant Garamond',Georgia,serif; font-size:1.5rem;
+    line-height:1.35; font-style:italic; font-weight:500; color:var(--plum-dark); position:relative;}
+  .greeting-ref{font-size:0.82rem; color:var(--rose); margin-top:10px;
+    font-family:'Cormorant Garamond',serif; font-weight:600; letter-spacing:0.3px;}
+  .greeting-status{display:inline-flex; align-items:center; gap:7px; margin-top:16px;
+    padding:7px 14px; border-radius:20px; font-size:0.82rem; font-weight:600;}
+  .greeting-status.vrucht{background:rgba(192,92,107,0.14); color:#9E3F52;}
+  .greeting-status.onvrucht{background:rgba(110,146,118,0.16); color:#4E6B54;}
+  .greeting-status.onbekend{background:rgba(154,139,147,0.16); color:#7A6B74;}
+  body.dark .greeting-status.vrucht{background:rgba(201,123,132,0.2); color:#E8A4AC;}
+  body.dark .greeting-status.onvrucht{background:rgba(124,154,130,0.2); color:#A8C9B0;}
+  body.dark .greeting-status.onbekend{background:rgba(184,169,180,0.2); color:#C8B9C4;}
+  .greeting-status .dot{width:8px; height:8px; border-radius:50%; flex-shrink:0;}
+  .greeting-status.vrucht .dot{background:#C05C6B;}
+  .greeting-status.onvrucht .dot{background:#6E9276;}
+  .greeting-status.onbekend .dot{background:#9A8B93;}
+  .greeting-phase{font-size:0.84rem; color:var(--text-soft); margin-top:14px; padding-top:13px;
+    border-top:1px solid var(--line); line-height:1.55;}
+  /* Losse status-hero (nog gebruikt in editing/bare fallback) */
+  .status-hero{border-radius:16px; padding:16px; margin-bottom:12px; color:#fff;}
+  .status-hero.vrucht{background:linear-gradient(135deg,#C05C6B,#9E3F52);}
+  .status-hero.onvrucht{background:linear-gradient(135deg,#6E9276,#4E6B54);}
+  .status-hero.onbekend{background:linear-gradient(135deg,#9A8B93,#7A6B74);}
+  .status-hero .big{font-size:1.1rem; font-weight:600; font-family:'Fraunces',Georgia,serif;}
+  .status-hero .why{font-size:0.8rem; opacity:0.92; margin-top:5px; line-height:1.45;}
+  /* Agenda maandkalender */
+  .month-block{margin-bottom:18px;}
+  .month-title{font-family:'Fraunces',Georgia,serif; color:var(--plum-dark);
+    font-size:1.05rem; font-weight:600; margin:4px 0 8px; letter-spacing:0.2px;}
+  .month-grid{display:grid; grid-template-columns:repeat(7,1fr); gap:4px;}
+  .dow{font-size:0.64rem; color:var(--text-soft); text-align:center; padding:2px 0; font-weight:600;}
+  .mday{aspect-ratio:1; border-radius:11px; display:flex; align-items:center; justify-content:center;
+    font-size:0.78rem; background:var(--input-bg); color:var(--text-soft); position:relative;
+    transition:transform .1s;}
+  .mday:active{transform:scale(0.92);}
+  .mday.empty{background:transparent;}
+  .mday.bloeding{background:linear-gradient(145deg,#C0505F,#9E3348); color:#fff; font-weight:600;}
+  .mday.vrucht{background:#F6C9A8; color:#8A4B24; font-weight:600;}
+  .mday.onvrucht{background:#CFE4D3; color:#375A40; font-weight:600;}
+  /* Nachtmodus: zacht gevuld vlak + subtiele rand in dezelfde kleurfamilie (definitie zonder neon) */
+  body.dark .mday{background:#2E2536; color:#9A8A94; border:1px solid #3A2F44;}
+  body.dark .mday.bloeding{background:#6E4551; border:1px solid #9A6474; color:#F4D9DE; font-weight:600;}
+  body.dark .mday.vrucht{background:#7A5A4C; border:1px solid #A67E68; color:#F6DEC9; font-weight:600;}
+  body.dark .mday.onvrucht{background:#42564A; border:1px solid #6E8A78; color:#D2E4D6; font-weight:600;}
+  .mday.pred{border:1.5px dashed var(--rose); background:transparent; color:var(--rose);}
+  .mday.today{box-shadow:0 0 0 2px var(--surface), 0 0 0 4px var(--plum-dark);}
+  .sex-dot{position:absolute; bottom:2px; right:3px; font-size:0.55rem; color:#C0392B; line-height:1;}
+  body.dark .sex-dot{color:#FFC0C0;}
+  .aleg{width:12px; height:12px; border-radius:5px; display:inline-block; vertical-align:-2px; margin-right:4px;}
+  .bloed-dot{background:linear-gradient(145deg,#C0505F,#9E3348);}
+  .fert-dot{background:#F6C9A8;} .onvr-dot{background:#CFE4D3;}
+  body.dark .bloed-dot{background:#6E4551; border:1px solid #9A6474;}
+  body.dark .fert-dot{background:#7A5A4C; border:1px solid #A67E68;}
+  body.dark .onvr-dot{background:#42564A; border:1px solid #6E8A78;}
+  .pred-dot{border:1.5px dashed var(--rose);}
+  /* Login-overlay */
+  #authOverlay{position:fixed; inset:0; background:var(--bg); z-index:100;
+    display:flex; align-items:center; justify-content:center; padding:20px;}
+  #authOverlay.hidden{display:none;}
+  .auth-card{background:var(--surface); border-radius:18px; padding:26px 22px; width:100%; max-width:380px;
+    box-shadow:0 8px 30px rgba(0,0,0,0.15);}
+  .auth-card h2{font-family:'Fraunces',Georgia,serif; color:var(--plum-dark); margin:0 0 4px; font-size:1.3rem;}
+  .auth-card .tagline{font-size:0.82rem; color:var(--text-soft); margin-bottom:18px;}
+  .auth-msg{font-size:0.8rem; margin-top:10px; min-height:18px;}
+  .auth-msg.err{color:var(--danger);} .auth-msg.ok{color:var(--sage-dark);}
+  .auth-switch{text-align:center; margin-top:14px; font-size:0.82rem; color:var(--text-soft);}
+  .auth-switch a{color:var(--plum-dark); font-weight:600; cursor:pointer; text-decoration:underline;}
+  #logoutBtn{background:rgba(255,255,255,0.15); border:none; color:#fff; font-size:0.72rem;
+    padding:5px 10px; border-radius:12px; cursor:pointer; margin-top:6px;}
+  #authOverlay, #logoutBtn{display:none !important;}
+</style>
+</head>
+<body>
+
+<div id="authOverlay">
+  <div class="auth-card">
+    <h2>&#127807; Cyclus</h2>
+    <div class="tagline">Log in om je cyclusgegevens veilig te bewaren en op elk toestel te openen.</div>
+    <label>E-mailadres</label>
+    <input type="email" id="authEmail" placeholder="naam@voorbeeld.nl" autocomplete="email">
+    <label>Wachtwoord</label>
+    <input type="password" id="authPass" placeholder="minstens 6 tekens" autocomplete="current-password">
+    <button class="primary" id="authSubmit">Inloggen</button>
+    <div class="auth-msg" id="authMsg"></div>
+    <div class="auth-switch" id="authSwitch">Nog geen account? <a id="authToggle">Account aanmaken</a></div>
+  </div>
+</div>
+
+<header>
+  <div style="display:flex; align-items:center; gap:10px;">
+    <span style="flex-shrink:0;"><svg width="34" height="34" viewBox="0 0 512 512"><g transform="translate(256,256)">
+      <ellipse rx="52" ry="90" transform="rotate(0) translate(0,-78)" fill="#E8B4BC"/>
+      <ellipse rx="52" ry="90" transform="rotate(45) translate(0,-78)" fill="#E8B4BC"/>
+      <ellipse rx="52" ry="90" transform="rotate(90) translate(0,-78)" fill="#E8B4BC"/>
+      <ellipse rx="52" ry="90" transform="rotate(135) translate(0,-78)" fill="#E8B4BC"/>
+      <ellipse rx="52" ry="90" transform="rotate(180) translate(0,-78)" fill="#E8B4BC"/>
+      <ellipse rx="52" ry="90" transform="rotate(225) translate(0,-78)" fill="#E8B4BC"/>
+      <ellipse rx="52" ry="90" transform="rotate(270) translate(0,-78)" fill="#E8B4BC"/>
+      <ellipse rx="52" ry="90" transform="rotate(315) translate(0,-78)" fill="#E8B4BC"/>
+      <circle r="58" fill="#C97B84"/><circle r="34" fill="#FBF6F1"/><circle r="16" fill="#5B3A4B"/>
+    </g></svg></span>
+    <div>
+      <h1 style="font-family:'Fraunces',Georgia,serif; font-weight:600;">Cycluss</h1>
+      <div class="sub" id="headerSub">Sensiplan &middot; natuurlijke gezinsplanning</div>
+    </div>
+  </div>
+  <div style="display:flex; flex-direction:column; align-items:flex-end; gap:2px;">
+    <button id="settingsBtn" title="Instellingen"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg></button>
+    <button id="logoutBtn">Uitloggen</button>
+  </div>
+</header>
+
+<!-- Instellingen popup -->
+<div id="settingsPopup" style="display:none; position:fixed; inset:0; z-index:60;
+  background:rgba(0,0,0,0.45); align-items:flex-end; justify-content:center;">
+  <div style="background:var(--surface); border-radius:20px 20px 0 0; padding:22px 20px 32px;
+    width:100%; max-width:640px; box-shadow:0 -4px 20px rgba(0,0,0,0.2); max-height:85vh; overflow-y:auto;">
+    <div style="width:40px; height:4px; background:var(--line); border-radius:4px; margin:0 auto 18px;"></div>
+    <h2 style="margin:0 0 16px; font-family:'Fraunces',Georgia,serif; color:var(--plum-dark); font-size:1.15rem;">⚙️ Instellingen</h2>
+
+    <div class="toggle-row" style="border-bottom:1px solid var(--line); padding-bottom:12px;">
+      <span><span class="emoji">🌙</span> Donkere modus</span>
+      <label class="switch"><input type="checkbox" id="darkToggle"><span class="slider"></span></label>
+    </div>
+
+    <div style="border-bottom:1px solid var(--line); padding:14px 0;">
+      <div class="toggle-row" style="padding:0;">
+        <span>⏰ Dagelijkse herinnering</span>
+        <label class="switch"><input type="checkbox" id="setReminderToggle"><span class="slider"></span></label>
+      </div>
+      <div id="setReminderTimeRow" style="display:none; margin-top:10px;">
+        <label>Herinneringstijd</label>
+        <input type="time" id="setReminderTime" value="07:00" style="max-width:140px;">
+      </div>
+      <p class="muted" id="setReminderStatus" style="font-size:0.74rem; margin-top:6px;"></p>
+      <button class="secondary" id="testNotifBtn" style="margin-top:8px;">🔔 Test melding nu</button>
+      <p class="muted" style="font-size:0.72rem; margin-top:4px; line-height:1.4;">
+        Je krijgt de melding ook als de app gesloten is. Heb je vandaag al iets ingevuld,
+        dan blijft de melding weg.</p>
+    </div>
+
+    <div style="padding:14px 0;">
+      <span style="font-weight:600; font-size:0.9rem;"><span class="emoji">📄</span> Cycluskaart delen</span>
+      <p class="muted" style="font-size:0.78rem; margin:6px 0 10px; line-height:1.5;">
+        Deel de ingevulde cycluskaart als PDF, bijvoorbeeld via mail, WhatsApp of Drive.
+        Handig als extra kopie of voor een arts.<b id="setMailEmail" hidden></b></p>
+      <button class="secondary" id="setMailSend" style="margin:0;">Deel PDF-kaart</button>
+    </div>
+
+    <div style="border-bottom:1px solid var(--line); padding:14px 0;">
+      <span style="font-weight:600; font-size:0.9rem;"><span class="emoji">🌸</span> Bijzondere fase</span>
+      <p class="muted" style="font-size:0.76rem; margin:6px 0 10px; line-height:1.5;">
+        In deze fases zijn de gewone regels niet betrouwbaar. De app zet dan de automatische
+        vruchtbaar/onvruchtbaar-conclusie uit en toont de juiste uitleg. Beoordeel zelf of met een consulent.</p>
+      <div class="toggle-row" style="padding:4px 0;">
+        <span><span class="emoji">💊</span> Na de pil (post-hormonaal)</span>
+        <label class="switch"><input type="checkbox" id="modePostPil"><span class="slider"></span></label>
+      </div>
+      <div class="toggle-row" style="padding:4px 0;">
+        <span><span class="emoji">🤱</span> Borstvoeding</span>
+        <label class="switch"><input type="checkbox" id="modeBorstvoeding"><span class="slider"></span></label>
+      </div>
+    </div>
+
+    <div style="border-bottom:1px solid var(--line); padding:14px 0;">
+      <span style="font-weight:600; font-size:0.9rem;"><span class="emoji">💾</span> Back-up van je gegevens</span>
+      <p class="muted" style="font-size:0.76rem; margin:6px 0 10px; line-height:1.5;">
+        Je gegevens staan alleen op deze telefoon. Bewaar af en toe een back-up, bijvoorbeeld
+        op Google Drive. Met &lsquo;terugzetten&rsquo; haal je ook gegevens uit de oude webversie binnen.</p>
+      <p class="muted" id="lastBackupInfo" style="font-size:0.74rem; margin:0 0 10px;"></p>
+      <button class="secondary" id="exportDataBtn" style="margin:0;">Back-up opslaan of delen</button>
+      <button class="secondary" id="importDataBtn" style="margin-top:8px;">Back-up terugzetten</button>
+      <input type="file" id="importDataFile" accept="application/json" style="display:none;">
+    </div>
+
+    <div style="border-bottom:1px solid var(--line); padding:14px 0;">
+      <div class="toggle-row" style="padding:0;">
+        <span><span class="emoji">🔒</span> Pincodevergrendeling</span>
+        <label class="switch"><input type="checkbox" id="pinToggle"><span class="slider"></span></label>
+      </div>
+      <p class="muted" style="font-size:0.76rem; margin:6px 0 0; line-height:1.5;">
+        Vraagt een 4-cijferige pincode bij het openen van de app.</p>
+      <button class="secondary" id="pinChangeBtn" style="margin-top:10px; display:none;">Pincode wijzigen</button>
+    </div>
+
+    <button class="secondary" id="settingsClose" style="margin-top:10px;">Sluiten</button>
+  </div>
+</div>
+
+<!-- Kolom-uitleg popup -->
+<div id="colInfoPopup" style="display:none; position:fixed; inset:0; z-index:70;
+  background:rgba(0,0,0,0.45); align-items:center; justify-content:center; padding:20px;">
+  <div style="background:var(--surface); border-radius:18px; padding:22px 20px; width:100%; max-width:400px;
+    box-shadow:0 8px 30px rgba(0,0,0,0.2);">
+    <h2 id="colInfoTitle" style="margin:0 0 10px; font-family:'Fraunces',Georgia,serif; color:var(--plum-dark); font-size:1.05rem;"></h2>
+    <p id="colInfoText" style="font-size:0.86rem; color:var(--text); line-height:1.6; margin:0 0 16px;"></p>
+    <button class="secondary" id="colInfoClose" style="margin:0;">Sluiten</button>
+  </div>
+</div>
+
+<!-- Gemeenschap popup -->
+<div id="sexPopup" style="display:none; position:fixed; inset:0; z-index:70;
+  background:rgba(0,0,0,0.45); align-items:center; justify-content:center; padding:20px;">
+  <div style="background:var(--surface); border-radius:18px; padding:22px 20px; width:100%; max-width:340px;
+    box-shadow:0 8px 30px rgba(0,0,0,0.2); text-align:center;">
+    <div style="font-size:1.8rem; margin-bottom:6px;">♥</div>
+    <h2 id="sexPopupDate" style="margin:0 0 6px; font-family:'Fraunces',Georgia,serif; color:var(--plum-dark); font-size:1.05rem;"></h2>
+    <p style="font-size:0.9rem; color:var(--text); margin:0 0 18px;">Gemeenschap gehad op deze dag?</p>
+    <div style="display:flex; gap:10px;">
+      <button class="primary" id="sexYes" style="margin:0; flex:1;">Ja</button>
+      <button class="secondary" id="sexNo" style="margin:0; flex:1;">Nee</button>
+    </div>
+    <button class="secondary" id="sexCancel" style="margin-top:8px;">Annuleren</button>
+  </div>
+</div>
+
+<!-- Snel ochtend-temperatuur -->
+<div id="ochtendPopup" style="display:none; position:fixed; inset:0; z-index:75;
+  background:linear-gradient(160deg, var(--plum), var(--plum-dark)); align-items:center; justify-content:center; padding:24px;">
+  <div style="width:100%; max-width:360px; text-align:center; color:#fff;">
+    <div style="font-size:2.4rem; margin-bottom:4px;">🌅</div>
+    <h2 id="ochtendGroet" style="font-family:'Fraunces',Georgia,serif; font-size:1.6rem; font-weight:600; margin:0 0 6px; color:#fff;">Goedemorgen</h2>
+    <p style="font-size:0.9rem; opacity:0.85; margin:0 0 26px;">Even je temperatuur van vanochtend</p>
+    <input type="number" step="0.01" min="35" max="39" id="ochtendTemp" inputmode="decimal"
+      placeholder="36.50" style="width:100%; text-align:center; font-size:2.2rem; padding:18px;
+      border-radius:16px; border:none; background:rgba(255,255,255,0.95); color:var(--plum-dark);
+      font-family:'Fraunces',Georgia,serif; font-weight:600;">
+    <div style="font-size:0.8rem; opacity:0.8; margin-top:8px;">°C · meettijd <span id="ochtendTijd">07:00</span></div>
+    <button id="ochtendOpslaan" style="width:100%; margin-top:24px; padding:16px; border:none;
+      border-radius:16px; background:#fff; color:var(--plum-dark); font-size:1.05rem; font-weight:700;
+      cursor:pointer; box-shadow:0 4px 14px rgba(0,0,0,0.2);">Opslaan</button>
+    <button id="ochtendGestoord" style="width:100%; margin-top:10px; padding:12px; border:1px solid rgba(255,255,255,0.4);
+      border-radius:14px; background:transparent; color:#fff; font-size:0.85rem; cursor:pointer;">
+      ⚠️ Meting was gestoord (gebroken nacht, laat...)</button>
+    <button id="ochtendLater" style="width:100%; margin-top:10px; padding:10px; border:none;
+      border-radius:14px; background:transparent; color:rgba(255,255,255,0.75); font-size:0.85rem; cursor:pointer;">
+      Later invullen</button>
+  </div>
+</div>
+
+<!-- Pincode-slot -->
+<div id="pinOverlay" style="display:none; position:fixed; inset:0; z-index:120;
+  background:linear-gradient(160deg,var(--plum),var(--plum-dark)); align-items:center; justify-content:center; padding:24px;">
+  <div style="width:100%; max-width:320px; text-align:center; color:#fff;">
+    <div style="font-size:2rem; margin-bottom:8px;">🔒</div>
+    <h2 id="pinTitle" style="font-family:'Fraunces',Georgia,serif; font-size:1.4rem; font-weight:600; margin:0 0 4px; color:#fff;">Voer je pincode in</h2>
+    <p id="pinSub" style="font-size:0.85rem; opacity:0.8; margin:0 0 20px;">Cycluss is beveiligd met een pincode.</p>
+    <div id="pinDots" style="display:flex; gap:12px; justify-content:center; margin-bottom:22px;">
+      <span class="pindot"></span><span class="pindot"></span><span class="pindot"></span><span class="pindot"></span>
+    </div>
+    <div id="pinPad" style="display:grid; grid-template-columns:repeat(3,1fr); gap:12px; max-width:240px; margin:0 auto;">
+      <button class="pinkey" data-n="1">1</button><button class="pinkey" data-n="2">2</button><button class="pinkey" data-n="3">3</button>
+      <button class="pinkey" data-n="4">4</button><button class="pinkey" data-n="5">5</button><button class="pinkey" data-n="6">6</button>
+      <button class="pinkey" data-n="7">7</button><button class="pinkey" data-n="8">8</button><button class="pinkey" data-n="9">9</button>
+      <span></span><button class="pinkey" data-n="0">0</button><button class="pinkey" data-del="1">⌫</button>
+    </div>
+    <p id="pinError" style="font-size:0.82rem; color:#FFD5D5; margin-top:16px; min-height:18px;"></p>
+    <button id="pinForgot" style="margin-top:8px; background:none; border:none; color:rgba(255,255,255,0.75);
+      font-size:0.82rem; text-decoration:underline; cursor:pointer;">Pincode vergeten?</button>
+  </div>
+</div>
+
+<nav>
+  <button data-tab="vandaag" class="active">Vandaag</button>
+  <button data-tab="kaart">Kaart</button>
+  <button data-tab="agenda">Agenda</button>
+  <button data-tab="cycli">Cycli</button>
+  <button data-tab="info">Uitleg</button>
+</nav>
+
+<main>
+<section id="tab-vandaag" class="active"></section>
+
+<section id="tab-kaart">
+  <div class="card">
+    <h2 id="kaartTitle">Cycluskaart</h2>
+    <div id="interpretationBox" style="font-size:0.82rem; line-height:1.5;"></div>
+  </div>
+  <div class="card" style="padding:10px;">
+    <div class="kaart-outer" id="kaartOuter"></div>
+    <div style="margin-top:12px; padding-top:10px; border-top:1px solid var(--line);">
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px 14px; font-size:0.74rem;">
+        <div style="display:flex; align-items:center; gap:7px;">
+          <span style="display:inline-block; width:18px; text-align:center; color:#B8860B; font-size:1rem;">◯</span>
+          <span>gestoorde meting (telt niet mee)</span></div>
+        <div style="display:flex; align-items:center; gap:7px;">
+          <span style="display:inline-block; width:18px; text-align:center; color:var(--rose); font-size:0.9rem;">▲</span>
+          <span>bevestigde temperatuurstijging</span></div>
+        <div style="display:flex; align-items:center; gap:7px;">
+          <span style="display:inline-block; width:18px; text-align:center; color:var(--rose); font-weight:700;">P</span>
+          <span>piekdag (dan telling 1·2·3)</span></div>
+        <div style="display:flex; align-items:center; gap:7px;">
+          <span style="display:inline-block; width:18px; text-align:center; color:var(--plum-dark); font-weight:700;">|</span>
+          <span>laatste onvruchtbare dag (begin)</span></div>
+        <div style="display:flex; align-items:center; gap:7px;">
+          <span style="display:inline-block; width:18px; text-align:center; color:var(--danger); font-weight:700;">v</span>
+          <span>vruchtbare dag</span></div>
+        <div style="display:flex; align-items:center; gap:7px;">
+          <span style="display:inline-block; width:18px; text-align:center; color:var(--danger); font-weight:700;">v/</span>
+          <span>einde vruchtbare periode</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <h2>Dagen bewerken</h2>
+    <div id="dayEditList"></div>
+  </div>
+</section>
+
+<section id="tab-agenda">
+  <div class="card">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+      <button id="agendaPrev" style="width:40px; height:40px; border-radius:50%; border:1px solid var(--line);
+        background:var(--input-bg); color:var(--plum-dark); font-size:1.2rem; cursor:pointer; padding:0;
+        display:flex; align-items:center; justify-content:center;">‹</button>
+      <h2 id="agendaMonthTitle" style="margin:0; text-align:center; flex:1;">Maandoverzicht</h2>
+      <button id="agendaNext" style="width:40px; height:40px; border-radius:50%; border:1px solid var(--line);
+        background:var(--input-bg); color:var(--plum-dark); font-size:1.2rem; cursor:pointer; padding:0;
+        display:flex; align-items:center; justify-content:center;">›</button>
+    </div>
+    <div class="legend" style="display:flex; gap:14px; flex-wrap:wrap; font-size:0.74rem; color:var(--text-soft); margin-bottom:14px; justify-content:center;">
+      <span><span class="aleg bloed-dot"></span> bloeding</span>
+      <span><span class="aleg fert-dot"></span> vruchtbaar</span>
+      <span><span class="aleg onvr-dot"></span> onvruchtbaar</span>
+      <span><span class="aleg pred-dot"></span> verwacht</span>
+      <span><span style="color:#C0392B; margin-right:3px;">♥</span> gemeenschap</span>
+    </div>
+    <div id="agendaMonths"></div>
+    <button class="secondary" id="agendaToday" style="margin-top:12px;">Naar deze maand</button>
+  </div>
+  <div class="card">
+    <h2>Overzicht</h2>
+    <div id="agendaStatsBox"></div>
+  </div>
+</section>
+
+<section id="tab-cycli">
+  <div class="card">
+    <h2>Al je cycli</h2>
+    <div class="cyclelist" id="cycleList"></div>
+    <button class="secondary" id="newCycleBtn">+ Nieuwe cyclus starten (dag 1 = eerste dag bloeding)</button>
+  </div>
+</section>
+
+<section id="tab-voorbeeld">
+  <div class="card">
+    <h2>&#129514; Voorbeeld</h2>
+    <p class="note" style="font-size:0.84rem;">Dit is een voorbeeld ter uitleg &mdash; het staat los van jouw eigen
+    gegevens. Zo zien twee volle cycli, de agenda en de kaarten eruit.</p>
+    <button class="secondary" id="backToInfoBtn">&larr; Terug naar Uitleg</button>
+  </div>
+
+  <div class="card">
+    <h2><span class="emoji">📅</span> Agenda-voorbeeld</h2>
+    <div class="legend" style="display:flex; gap:14px; flex-wrap:wrap; font-size:0.74rem; color:var(--text-soft); margin:6px 0 12px; justify-content:center;">
+      <span><span class="aleg bloed-dot"></span> bloeding</span>
+      <span><span class="aleg fert-dot"></span> vruchtbaar</span>
+      <span><span class="aleg onvr-dot"></span> onvruchtbaar</span>
+      <span><span style="color:#C0392B; margin-right:3px;">♥</span> gemeenschap</span>
+    </div>
+    <div id="voorbeeldAgenda"></div>
+  </div>
+
+  <div class="card">
+    <h2><span class="emoji">📊</span> Overzicht-voorbeeld</h2>
+    <p class="note" style="font-size:0.82rem; margin:0 0 12px;">Zo ziet het overzicht met gemiddelden eruit (hier op basis van de twee voorbeeldcycli):</p>
+    <div id="voorbeeldStatsBox"></div>
+  </div>
+
+  <div class="card">
+    <h2 id="voorbeeldTitle">Cycluskaart</h2>
+    <div id="voorbeeldInterpretationBox" class="note" style="font-size:0.84rem;"></div>
+    <div class="kaart-outer" id="voorbeeldKaartOuter"></div>
+  </div>
+
+  <div class="card">
+    <h2 id="voorbeeldTitle2">Cycluskaart 2</h2>
+    <div id="voorbeeldInterpretationBox2" class="note" style="font-size:0.84rem;"></div>
+    <div class="kaart-outer" id="voorbeeldKaartOuter2"></div>
+  </div>
+</section>
+
+<section id="tab-info">
+  <div class="card">
+    <h2>Wat is Sensiplan?</h2>
+    <p class="note" style="font-size:0.84rem; line-height:1.65;">
+    Sensiplan is een symptothermale methode voor natuurlijke gezinsplanning. Je leert je eigen
+    vruchtbaarheidssignalen herkennen door elke dag twee dingen bij te houden:
+    je <b>ochtendtemperatuur</b> en je <b>cervixslijm</b>. Samen vormen ze een betrouwbare
+    "dubbele controle" — pas als beide tekenen overeenkomen, is de vruchtbare fase echt voorbij.</p>
+    <p class="note" style="font-size:0.84rem; line-height:1.65;">
+    De methode werkt in twee richtingen: je kunt hem gebruiken om een <b>zwangerschap te vermijden</b>
+    of juist om de kans erop te <b>vergroten</b>. In beide gevallen geldt: hoe nauwkeuriger je meet
+    en noteert, hoe betrouwbaarder de uitkomst.</p>
+    <div class="warn">De app volgt de Sensiplan®-regels automatisch, maar vervangt geen cursus of
+    medisch advies. Twijfel je? Raadpleeg een gecertificeerd Sensiplan-consulent.</div>
+  </div>
+
+  <div class="card">
+    <h2><span class="emoji">🌡️</span> De ochtendtemperatuur</h2>
+    <p class="note" style="font-size:0.84rem; line-height:1.65;">
+    <b>Wanneer meten?</b> Elke ochtend direct na het wakker worden, vóór je opstaat of iets doet.
+    Na minstens 3 uur aaneengesloten slaap. Altijd op hetzelfde moment en op dezelfde manier
+    (rectaal, vaginaal of oraal — kies één manier en houd dat aan).</p>
+    <p class="note" style="font-size:0.84rem; line-height:1.65;">
+    <b>Wat zie je?</b> In de eerste helft van de cyclus (vóór de eisprong) ligt de temperatuur laag.
+    Na de eisprong stijgt hij — en blijft hoog. Die stijging is het bewijs dat de eisprong heeft
+    plaatsgevonden.</p>
+    <p class="note" style="font-size:0.84rem; line-height:1.65;">
+    <b>De stijgingsregel:</b> de app berekent elke dag een "hulplijn" — het maximum van de
+    6 voorafgaande geldige metingen. Een stijging is bevestigd als er 3 opeenvolgende metingen
+    <i>boven</i> de hulplijn staan, waarbij de 3e meting minstens 0,2°C boven de hulplijn ligt.</p>
+    <p class="note" style="font-size:0.84rem; line-height:1.65;">
+    <b>Gestoorde meting?</b> Zet de schakelaar "meting gestoord" aan bij een gebroken nacht,
+    laat wakker worden, alcohol, ziekte of koorts. De meting blijft zichtbaar op de kaart
+    (open ringetje) maar telt niet mee voor de berekening.</p>
+  </div>
+
+  <div class="card">
+    <h2><span class="emoji">💧</span> Cervixslijm</h2>
+    <p class="note" style="font-size:0.84rem; line-height:1.65;">
+    Cervixslijm verandert tijdens de cyclus. Leer het dagelijks observeren — wat voel je bij de
+    schaamlippen, en wat zie je eventueel? Noteer <i>avonds</i> de beste kwaliteit van die dag.</p>
+    <div style="overflow-x:auto; margin:8px 0;">
+    <table style="width:100%; border-collapse:collapse; font-size:0.78rem;">
+      <tr style="background:var(--rowlabel);">
+        <th style="padding:6px 8px; text-align:left; border:1px solid var(--line);">Afkorting</th>
+        <th style="padding:6px 8px; text-align:left; border:1px solid var(--line);">Gevoel</th>
+        <th style="padding:6px 8px; text-align:left; border:1px solid var(--line);">Uiterlijk</th>
+      </tr>
+      <tr><td style="padding:5px 8px; border:1px solid var(--line);"><b>d</b></td>
+        <td style="padding:5px 8px; border:1px solid var(--line);">droog, ruw, jeukend</td>
+        <td style="padding:5px 8px; border:1px solid var(--line);">niets gezien</td></tr>
+      <tr style="background:var(--input-bg);"><td style="padding:5px 8px; border:1px solid var(--line);"><b>Ø</b></td>
+        <td style="padding:5px 8px; border:1px solid var(--line);">niets gevoeld</td>
+        <td style="padding:5px 8px; border:1px solid var(--line);">niets gezien</td></tr>
+      <tr><td style="padding:5px 8px; border:1px solid var(--line);"><b>v</b></td>
+        <td style="padding:5px 8px; border:1px solid var(--line);">vochtig gevoeld</td>
+        <td style="padding:5px 8px; border:1px solid var(--line);">niets gezien</td></tr>
+      <tr style="background:var(--input-bg);"><td style="padding:5px 8px; border:1px solid var(--line);"><b>S</b></td>
+        <td style="padding:5px 8px; border:1px solid var(--line);">vochtig of niets</td>
+        <td style="padding:5px 8px; border:1px solid var(--line);">dik, wit, troebel, romig, klonterig, kleverig</td></tr>
+      <tr><td style="padding:5px 8px; border:1px solid var(--line);"><b>S+</b></td>
+        <td style="padding:5px 8px; border:1px solid var(--line);">nat, glibberig, glad</td>
+        <td style="padding:5px 8px; border:1px solid var(--line);">helder, glashelder, rekbaar, als rauw eiwit, draadjes trekkend</td></tr>
+    </table></div>
+    <p class="note" style="font-size:0.84rem; line-height:1.65; margin-top:8px;">
+    <b>Piekdag (P):</b> de laatste dag met de beste kwaliteit slijm (hoogste categorie). Daarna
+    nummert de app automatisch: P → 1 → 2 → 3. Op de avond van dag 3 na P is het
+    cervixslijm-symptoom afgesloten.</p>
+  </div>
+
+  <div class="card">
+    <h2><span class="emoji">🔄</span> De dubbele controle</h2>
+    <p class="note" style="font-size:0.84rem; line-height:1.65;">
+    De vruchtbare fase is pas echt voorbij als <b>zowel</b> de temperatuurstijging <b>als</b> de
+    piekdag-telling zijn afgesloten — en dan geldt: wat het <b>laatste</b> komt, bepaalt het einde.
+    Dat is de dubbele controle: twee onafhankelijke tekenen bevestigen samen dat de eisprong
+    geweest is en de vruchtbaarheid voorbij is.</p>
+    <p class="note" style="font-size:0.84rem; line-height:1.65;">
+    <b>Voorbeeld:</b> temperatuurstijging bevestigd op dag 18, piekdag+3 pas op dag 20 →
+    onvruchtbaar vanaf avond dag 20.</p>
+  </div>
+
+  <div class="card">
+    <h2><span class="emoji">📅</span> Begin van de cyclus</h2>
+    <p class="note" style="font-size:0.84rem; line-height:1.65;">
+    Aan het begin van de cyclus (na de menstruatie) kan er ook een korte onvruchtbare periode zijn,
+    maar die wordt strenger beoordeeld — altijd in dubbele controle met het cervixslijm.</p>
+    <p class="note" style="font-size:0.84rem; line-height:1.65;">
+    <b>Cyclus 1:</b> vanaf het begin vruchtbaar aannemen — er is nog geen voorgeschiedenis.</p>
+    <p class="note" style="font-size:0.84rem; line-height:1.65;">
+    <b>Cycli 2–12:</b> 5-dagen-regel — de eerste 5 dagen zijn onvruchtbaar, maar alléén als de
+    vorige cyclus een interpreteerbare temperatuurstijging had. Zodra cervixslijm of vocht optreedt:
+    meteen vruchtbaar.</p>
+    <p class="note" style="font-size:0.84rem; line-height:1.65;">
+    <b>Cyclus 13 en verder:</b> min-8-regel — de vroegste 1e hogere meting uit de laatste 12 cycli
+    minus 8 = laatste onvruchtbare dag. In dubbele controle met cervixslijm.</p>
+  </div>
+
+  <div class="card">
+    <h2><span class="emoji">🌿</span> Baarmoederhals (optioneel)</h2>
+    <p class="note" style="font-size:0.84rem; line-height:1.65;">
+    De baarmoederhals kun je gebruiken als alternatieve dubbele controle naast het cervixslijm.
+    Je voelt eenmaal per dag (zittend, altijd op dezelfde manier): stevigheid (hard/zacht),
+    ligging (laag/hoog) en opening (gesloten •/deels open ○/helemaal open ◯).</p>
+    <p class="note" style="font-size:0.84rem; line-height:1.65;">
+    Rond de eisprong: zacht, open, hoog. Na de eisprong: hard, gesloten, lager. Drie opeenvolgende
+    dagen gesloten + hard bevestigt (in dubbele controle met de temperatuur) dat de vruchtbare fase
+    voorbij is.</p>
+  </div>
+
+  <div class="card">
+    <h2><span class="emoji">👶</span> Kinderwens</h2>
+    <p class="note" style="font-size:0.84rem; line-height:1.65;">
+    De grootste kans op zwangerschap: de dagen met S+ slijm en de dag van de eerste hogere
+    temperatuurmeting, plus dagen met ovulatiepijn of een zachte/open/hoge baarmoederhals.
+    Bij ~60% van de paren lukt het binnen 6 maanden. Sensiplan helpt je ook bij een
+    langere weg naar zwangerschap — je cyclusdata zijn waardevol voor een arts.</p>
+  </div>
+
+  <div class="card">
+    <h2><span class="emoji">🤱</span> Borstvoeding</h2>
+    <p class="note" style="font-size:0.84rem; line-height:1.65;">
+    <b>LAM (Lactatie Amenorroe Methode)</b> geldt zolang: je geeft volledige borstvoeding +
+    kind is jonger dan 6 maanden + er is nog geen bloeding na de bevalling. Dan is vruchtbaarheid
+    vrijwel uitgesloten. Zodra één van deze drie wegvalt: gelden de gewone Sensiplan-regels
+    (waarbij de eerste hogere meting extra hoog moet zijn voor de dubbele controle).</p>
+  </div>
+
+  <div class="card">
+    <h2><span class="emoji">🌸</span> Overgangsjaren</h2>
+    <p class="note" style="font-size:0.84rem; line-height:1.65;">
+    Bij onregelmatige cycli of uitblijvende temperatuurstijgingen: alleen het cervixslijm gebruiken.
+    Droog/niets = onvruchtbaar; zodra vocht of slijm optreedt = vruchtbaar, t/m de avond van de
+    4e dag na de piekdag. De app geeft dan aan dat de dubbele controle niet volledig is.</p>
+  </div>
+
+  <div class="card">
+    <h2><span class="emoji">📊</span> Het overzicht (agenda)</h2>
+    <p class="note" style="font-size:0.84rem; line-height:1.65;">
+    Onderaan de Agenda-tab vind je een overzicht met je gemiddelden over de afgeronde cycli.
+    Deze cijfers helpen je patronen te herkennen: hoe lang je cyclus meestal duurt (met de
+    kortste en langste), hoeveel dagen je bloeding gemiddeld aanhoudt, en hoeveel vruchtbare
+    dagen je gemiddeld per cyclus hebt. Hoe meer cycli je bijhoudt, hoe nauwkeuriger het beeld —
+    handig om je eigen ritme te leren kennen of om te bespreken met een arts of consulent.</p>
+  </div>
+
+  <div class="card">
+    <h2><span class="emoji">🧪</span> Voorbeeld bekijken</h2>
+    <p class="note" style="font-size:0.84rem;">Benieuwd hoe een volle kaart eruitziet? Laad twee
+    complete voorbeeldcycli — helemaal los van je eigen gegevens.</p>
+    <button class="secondary" id="showVoorbeeldBtn">Voorbeeld bekijken</button>
+  </div>
+</section>
+</main>
+
+<button class="fab-add" id="fabAdd">+</button>
+
+<script>
+/* ============ PWA: manifest + icoon ============ */
+(function setupPWA(){
+  // Genereer een SVG-icoon (bloem op plum achtergrond) als data-URL
+  const svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+    <rect width="512" height="512" rx="110" fill="#5B3A4B"/>
+    <g transform="translate(256,256)">
+      ${[0,45,90,135,180,225,270,315].map(a=>`
+        <ellipse rx="52" ry="90" transform="rotate(${a}) translate(0,-78)"
+          fill="#E8B4BC" opacity="0.88"/>`).join('')}
+      <circle r="58" fill="#C97B84"/>
+      <circle r="34" fill="#FBF6F1"/>
+      <circle r="16" fill="#5B3A4B"/>
+    </g>
+  </svg>`;
+  const iconUrl='data:image/svg+xml;base64,'+btoa(svg);
+
+  // Apple touch icon
+  const appleLink=document.getElementById('appleTouchIcon');
+  if(appleLink) appleLink.href=iconUrl;
+
+  // PWA manifest
+  const manifest={
+    name:'Cyclus — Sensiplan',
+    short_name:'Cyclus',
+    description:'Sensiplan cyclustracker',
+    start_url:'./',
+    display:'standalone',
+    background_color:'#FBF6F1',
+    theme_color:'#5B3A4B',
+    icons:[
+      {src:iconUrl, sizes:'512x512', type:'image/svg+xml', purpose:'any maskable'}
+    ]
+  };
+  const blob=new Blob([JSON.stringify(manifest)],{type:'application/json'});
+  const manifestUrl=URL.createObjectURL(blob);
+  const ml=document.getElementById('pwaManifest');
+  if(ml) ml.href=manifestUrl;
+})();
+
+// Service worker registreren (nodig voor meldingen op Android/Chrome)
+if('serviceWorker' in navigator && !window.Android){
+  navigator.serviceWorker.register('sw.js').catch(e=>console.warn('SW registratie mislukt', e));
+}
+
+/* ============ Supabase ============ */
+// Lokale app: geen server, geen account.
+let sb = null;
+let currentUser = null;
+
+/* ============ Model & opslag ============ */
+const CERVIX_OPTIONS = [
+  {value:'d',  label:'d — droog, ruw, jeukend; niets gezien'},
+  {value:'Ø',  label:'Ø — niets gevoeld; niets gezien'},
+  {value:'v',  label:'v — vochtig gevoeld; niets gezien'},
+  {value:'S',  label:'S — dik, wit, troebel, romig, klonterig, kleverig'},
+  {value:'S+', label:'S+ — helder, transparant, rekbaar, als rauw eiwit'},
+  {value:'S+', label:'S+ — nat, glibberig, glad, ingeolied'}
+];
+/* Sensiplan ervaren/voelen opties (boek-conform) */
+const ERVAREN_OPTIES = [
+  {value:'',       label:'— kies —'},
+  {value:'droog',  label:'droog / ruw / jeukend / onaangenaam'},
+  {value:'niets',  label:'niets gevoeld / geen waarneming'},
+  {value:'vochtig', label:'vochtig'},
+  {value:'nat',    label:'nat / glibberig / glad / als ingeolied'}
+];
+/* Sensiplan uiterlijk opties (boek-conform) */
+const UITERLIJK_OPTIES = [
+  {value:'',         label:'— kies —'},
+  {value:'niets',    label:'niets gezien, geen slijm'},
+  {value:'dik',      label:'dik / wit / troebel / romig / melkachtig / smeuig'},
+  {value:'kleverig', label:'klonterig / gelig / kleverig / niet rekbaar'},
+  {value:'taal',     label:'een beetje taal-elastisch'},
+  {value:'helder',   label:'doorzichtig / glashelder / transparant'},
+  {value:'eiwit',    label:'als rauw eiwit / rekbaar / draden trekkend'},
+  {value:'vloei',    label:'vloeibaar / "wegvloeiend als water"'},
+  {value:'rood',     label:'roodachtig / roodbruin / geel-rood'}
+];
+/* Gemoedstand opties */
+const GEMOEDSTAND_OPTIES = [
+  {value:'',          label:'— kies —'},
+  {value:'blij',      label:'😊 blij / vrolijk'},
+  {value:'neutraal',  label:'😐 neutraal / gewoon'},
+  {value:'moe',       label:'😴 moe / futloos'},
+  {value:'prikkel',   label:'😤 prikkelbaar / geïrriteerd'},
+  {value:'verdrietig',label:'😢 verdrietig / somber'},
+  {value:'angstig',   label:'😰 angstig / onrustig'},
+  {value:'energiek',  label:'⚡ energiek / actief'},
+  {value:'romantisch',label:'💕 romantisch / aanhankelijk'},
+  {value:'gevoelig',  label:'🥺 gevoelig / emotioneel'}
+];
+/* Automatische afleiding van Sensiplan-afkorting */
+function deriveAfkorting(ervaren, uiterlijk){
+  if(!ervaren) return null;
+  // nat/glibberig/glad → altijd S+
+  if(ervaren==='nat') return 'S+';
+  // doorzichtig/rekbaar/eiwit/vloeibaar/rood → S+
+  if(['helder','eiwit','vloei','rood'].includes(uiterlijk)) return 'S+';
+  // taal-elastisch → S
+  if(uiterlijk==='taal') return 'S';
+  // dik/kleverig → S
+  if(['dik','kleverig'].includes(uiterlijk)) return 'S';
+  // vochtig + niets gezien → v
+  if(ervaren==='vochtig') return 'v';
+  // niets gevoeld → Ø
+  if(ervaren==='niets') return 'Ø';
+  // droog → d
+  return 'd';
+}
+const QUALITY_RANK = {'d':0,'Ø':0,'v':1,'S':2,'S+':3};
+
+let DATA = { cycles: [] };
+let currentCycleId = null;
+
+function localKey(){ return currentUser ? 'sensiplan_data_'+currentUser.id : 'sensiplan_data'; }
+
+function countDataPoints(data){
+  // telt het totaal aantal ingevulde dagen over alle cycli (maat voor 'hoeveel data')
+  if(!data || !data.cycles) return 0;
+  return data.cycles.reduce((sum,c)=> sum + (c.days? c.days.length : 0), 0);
+}
+async function loadData(){
+  // 1. eerst lokaal (snel, werkt offline)
+  let lokaal = { cycles: [] };
+  try{
+    const raw = localStorage.getItem(localKey());
+    if(raw) lokaal = JSON.parse(raw);
+  }catch(e){ lokaal = { cycles: [] }; }
+  DATA = lokaal;
+  // 1b. bestand op de telefoon (via de app); gebruik wat de meeste dagen bevat
+  if(window.Android){
+    try{
+      const raw2 = Android.getData();
+      if(raw2){
+        const bestand = JSON.parse(raw2);
+        if(bestand && bestand.cycles && countDataPoints(bestand) >= countDataPoints(DATA)) DATA = bestand;
+      }
+    }catch(e){ console.warn('Bestand lezen mislukt', e); }
+  }
+  // 2. dan cloud ophalen (indien ingelogd)
+  if(sb && currentUser){
+    try{
+      const { data, error } = await sb.from('cyclusdata').select('data').eq('user_id', currentUser.id).maybeSingle();
+      if(!error && data && data.data && data.data.cycles){
+        const cloud = data.data;
+        const cloudPunten = countDataPoints(cloud);
+        const lokaalPunten = countDataPoints(lokaal);
+        // VEILIGHEID: gebruik de cloud alleen als die minstens evenveel data heeft.
+        // Zo overschrijft een hapering (leeg/half cloud-antwoord) nooit volledige lokale data.
+        if(cloudPunten >= lokaalPunten){
+          DATA = cloud;
+          localStorage.setItem(localKey(), JSON.stringify(DATA));
+        } else {
+          // lokaal heeft méér: behoud lokaal en duw het terug naar de cloud
+          console.warn('Lokale data heeft meer dagen dan cloud; lokaal behouden en terugschrijven.');
+          DATA = lokaal;
+          try{ await sb.from('cyclusdata').upsert({ user_id: currentUser.id, data: DATA, updated_at: new Date().toISOString() }); }catch(e){}
+        }
+      }
+    }catch(e){ console.warn('Cloud laden mislukt, lokale data gebruikt', e); }
+  }
+  if(!DATA.cycles) DATA.cycles = [];
+  if(DATA.cycles.length === 0) startNewCycle(todayISO());
+  // herstel de onthouden selectie (als die cyclus nog bestaat), anders de huidige lopende cyclus
+  let savedView=null;
+  try{ savedView=localStorage.getItem('cyclus_view_id'); }catch(e){}
+  if(savedView && DATA.cycles.some(c=>c.id===savedView)) currentCycleId=savedView;
+  else currentCycleId = DATA.cycles[DATA.cycles.length-1].id;
+}
+async function saveData(){
+  // altijd meteen lokaal opslaan (offline-veilig)
+  try{ localStorage.setItem(localKey(), JSON.stringify(DATA)); }
+  catch(e){ console.error('Lokaal opslaan mislukt', e); }
+  if(window.Android){
+    try{ Android.setData(JSON.stringify(DATA)); }catch(e){ console.error('Bestand opslaan mislukt', e); }
+  }
+  // en naar de cloud pushen indien ingelogd
+  if(sb && currentUser){
+    try{
+      await sb.from('cyclusdata').upsert({ user_id: currentUser.id, data: DATA, updated_at: new Date().toISOString() });
+    }catch(e){ console.warn('Cloud opslaan mislukt (blijft lokaal bewaard)', e); }
+  }
+}
+function todayISO(){ return new Date().toISOString().slice(0,10); }
+function addDays(iso,n){ const d=new Date(iso+'T00:00:00'); d.setDate(d.getDate()+n); return d.toISOString().slice(0,10); }
+function fmtDate(iso){ const d=new Date(iso+'T00:00:00');
+  return d.toLocaleDateString('nl-NL',{day:'numeric',month:'short'}); }
+function fmtDateLong(iso){ const d=new Date(iso+'T00:00:00');
+  return d.toLocaleDateString('nl-NL',{weekday:'long',day:'numeric',month:'long'}); }
+function getCycle(id){ return DATA.cycles.find(c=>c.id===id); }
+// currentCycle() = de cyclus die je BEKIJKT (selectie in Cycli-tab, onthouden)
+function currentCycle(){ return getCycle(currentCycleId) || huidigeCyclus(); }
+// huidigeCyclus() = de ECHTE lopende cyclus (altijd de laatste) — hier gaat invullen naartoe
+function huidigeCyclus(){ return DATA.cycles[DATA.cycles.length-1]; }
+function setViewCycle(id){
+  currentCycleId=id;
+  try{ localStorage.setItem('cyclus_view_id', id); }catch(e){}
+}
+function startNewCycle(startDate){
+  DATA.cycles.push({ id:'c'+Date.now(), nummer:DATA.cycles.length+1, startDate, days:[] });
+  currentCycleId = DATA.cycles[DATA.cycles.length-1].id;
+  try{ localStorage.setItem('cyclus_view_id', currentCycleId); }catch(e){}
+}
+
+/* ============ Regels ============ */
+function validTemp(d){ return (d.temp && !d.gestoord) ? parseFloat(d.temp) : null; }
+
+function computeTempRise(cycle){
+  // werkt op de reeks GELDIGE metingen; gestoorde/ontbrekende worden overgeslagen
+  const seq = [];
+  cycle.days.forEach((d,i)=>{ const t=validTemp(d); if(t!==null) seq.push({i,t}); });
+  for(let k=6; k<seq.length; k++){
+    const window6 = seq.slice(k-6,k).map(o=>o.t);
+    const hulplijn = Math.max(...window6);
+    if(seq[k].t <= hulplijn) continue;
+    if(k+1>=seq.length || seq[k+1].t<=hulplijn) continue;
+    if(k+2<seq.length && seq[k+2].t>hulplijn){
+      if(seq[k+2].t >= hulplijn+0.19){
+        return { hulplijn, riseIdx:[seq[k].i,seq[k+1].i,seq[k+2].i],
+                 lowIdx:seq.slice(k-6,k).map(o=>o.i), closedAt:seq[k+2].i };
+      }
+      if(k+3<seq.length && seq[k+3].t>hulplijn){
+        return { hulplijn, riseIdx:[seq[k+1].i,seq[k+2].i,seq[k+3].i],
+                 lowIdx:seq.slice(k-6,k).map(o=>o.i), closedAt:seq[k+3].i, exception1:true };
+      }
+    }
+  }
+  return null;
+}
+function cervixRank(d){ return d.cervixAfk ? QUALITY_RANK[d.cervixAfk] : -1; }
+function computePeakDay(cycle){
+  // Piekdag = laatste dag met beste kwaliteit, MAAR alleen als de dag erna
+  // de kwaliteit daalt of verdwijnt (anders weet je nog niet dat het de piekdag was).
+  // Met maar één dag ingevoerd is er dus nooit al een piekdag.
+  const days=cycle.days;
+  let maxRank=-1, peakIdx=-1;
+  for(let i=0;i<days.length;i++){
+    const r=cervixRank(days[i]);
+    if(r>=1 && r>=maxRank){ maxRank=r; peakIdx=i; }
+  }
+  if(peakIdx===-1 || maxRank<2) return null; // minstens S of S+ vereist
+  // check: is er een dag NA de piekdag met lagere of geen kwaliteit?
+  // (pas dan weet je dat de piekdag voorbij is)
+  const hasFollowUp = days.slice(peakIdx+1).some(d => cervixRank(d) < maxRank);
+  if(!hasFollowUp) return null; // nog geen bevestiging — piekdag nog niet aanwijsbaar
+  return { index:peakIdx, rank:maxRank };
+}
+function computeBMHClosed(cycle){
+  const ds=cycle.days;
+  for(let i=2;i<ds.length;i++){
+    if([ds[i-2],ds[i-1],ds[i]].every(d=>d.bmOpening==='gesloten'&&d.bmStevigheid==='hard'))
+      return { closedAt:i };
+  }
+  return null;
+}
+function computeInfertileAfterOvulation(cycle){
+  const peak=computePeakDay(cycle), rise=computeTempRise(cycle), bmh=computeBMHClosed(cycle);
+  const cervixEnd = peak? peak.index+3 : null;
+  const tempEnd = rise? rise.closedAt : null;
+  const bmhEnd = bmh? bmh.closedAt : null;
+  let combined=null, basis=null;
+  if(cervixEnd!==null && tempEnd!==null){ combined=Math.max(cervixEnd,tempEnd); basis='temperatuur + cervixslijm'; }
+  else if(tempEnd!==null && bmhEnd!==null){ combined=Math.max(tempEnd,bmhEnd); basis='temperatuur + baarmoederhals'; }
+  return { peak, rise, bmh, cervixEnd, tempEnd, bmhEnd, combined, basis };
+}
+function priorCyclesSorted(cycle){
+  return DATA.cycles.filter(c=>c.nummer<cycle.nummer).sort((a,b)=>a.nummer-b.nummer);
+}
+function riseDayNumber(c){ const r=computeTempRise(c); return r? r.riseIdx[0]+1 : null; }
+function getMin8Data(cycle){
+  const priors = priorCyclesSorted(cycle).slice(-12);
+  if(priors.length<12) return null;
+  const nums = priors.map(riseDayNumber);
+  if(nums.some(n=>n===null)) return null;
+  const earliest = Math.min(...nums);
+  return { earliest, min8:Math.max(earliest-8,0) };
+}
+function computeCycleStartInfertile(cycle){
+  const firstFluid = cycle.days.findIndex(d=>d.cervixAfk && d.cervixAfk!=='d' && d.cervixAfk!=='Ø');
+  if(cycle.nummer===1)
+    return { rule:'Eerste cyclus', lastSafeDay:0, note:'Vanaf het begin vruchtbaar aannemen (geen voorgeschiedenis).', detail:null };
+  const min8=getMin8Data(cycle);
+  let lastSafeDay, rule, note=null, detail=null;
+  if(min8){
+    lastSafeDay=min8.min8; rule='Min-8-regel';
+    detail=`Vroegste 1e hogere meting uit laatste 12 cycli: dag ${min8.earliest} → min 8 = dag ${min8.min8}.`;
+  } else {
+    const prev=DATA.cycles.find(c=>c.nummer===cycle.nummer-1);
+    const prevRise=prev? riseDayNumber(prev):null;
+    if(prevRise){ lastSafeDay=5; rule='5-dagen-regel';
+      detail=`Geldig: cyclus ${cycle.nummer-1} had een interpreteerbare stijging (dag ${prevRise}).`; }
+    else { lastSafeDay=0; rule='Geen regel toepasbaar';
+      note=`Cyclus ${cycle.nummer-1} had geen interpreteerbare temperatuurstijging — 5-dagen-regel niet toegestaan. Vanaf begin vruchtbaar aannemen.`; }
+  }
+  if(firstFluid!==-1 && (firstFluid+1)<=lastSafeDay){
+    lastSafeDay=firstFluid; rule+=' + slijm eerder';
+    detail=(detail?detail+' ':'')+`Vocht/slijm al op dag ${firstFluid+1}: wat het eerst komt geldt.`;
+  }
+  return { rule, lastSafeDay, note, detail };
+}
+/* Voorspelling op basis van gemiddelde van voltooide cycli */
+function computePrediction(){
+  const done = DATA.cycles.filter(c=>c.id!==currentCycleId && c.days.length>=15);
+  if(done.length===0) return null;
+  const lengths = done.map(c=>c.days.length);
+  const avgLen = Math.round(lengths.reduce((a,b)=>a+b,0)/lengths.length);
+  const riseDays = done.map(riseDayNumber).filter(x=>x!==null);
+  const avgRise = riseDays.length? Math.round(riseDays.reduce((a,b)=>a+b,0)/riseDays.length) : null;
+  const startISO = huidigeCyclus().startDate;
+  const nextMenstru = addDays(startISO, avgLen);
+  let fertileStart=null, fertileEnd=null;
+  if(avgRise){
+    fertileStart = addDays(startISO, Math.max(avgRise-6,0));
+    fertileEnd   = addDays(startISO, avgRise);
+  }
+  return { count:done.length, avgLen, avgRise, nextMenstru, fertileStart, fertileEnd };
+}
+
+/* Status van vandaag / laatste dag */
+function computeStatus(cycle){
+  const n = cycle.days.length;
+  if(n===0) return { cls:'onbekend', label:'Nog geen gegevens', why:'Voeg je eerste dag toe.' };
+  // Bijzondere fase: geen automatische conclusie
+  if(isSpecialMode()){
+    const m=getSpecialMode();
+    const fase = m.postpil && m.borstvoeding ? 'na de pil én borstvoeding'
+      : m.postpil ? 'na de pil' : 'borstvoeding';
+    return { cls:'onbekend', label:'Bijzondere fase ('+fase+')',
+      why:'In deze fase geeft de app geen automatische veilig/onveilig-conclusie. Volg de uitleg en beoordeel zelf of met een consulent.' };
+  }
+  const start = computeCycleStartInfertile(cycle);
+  const end = computeInfertileAfterOvulation(cycle);
+  const lastIdx = n-1;
+  if(end.combined!==null && lastIdx>=end.combined)
+    return { cls:'onvrucht', label:'Onvruchtbaar', why:`Vruchtbare fase gesloten op avond van dag ${end.combined+1} (${end.basis}).` };
+  if(lastIdx < start.lastSafeDay)
+    return { cls:'onvrucht', label:'Onvruchtbaar (begin cyclus)', why:`${start.rule}: onvruchtbaar t/m dag ${start.lastSafeDay}. Let op: zodra vocht of slijm optreedt, wordt het vruchtbaar.` };
+  return { cls:'vrucht', label:'Vruchtbaar aannemen', why: end.rise? 'Stijging herkend maar dubbele controle nog niet compleet.' : 'Vruchtbare fase — nog geen afgesloten dubbele controle.' };
+}
+
+/* ============ UI ============ */
+document.querySelectorAll('nav button').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('main section').forEach(s=>s.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-'+btn.dataset.tab).classList.add('active');
+    try{
+      if(btn.dataset.tab==='vandaag') renderVandaag();
+      if(btn.dataset.tab==='kaart') renderKaart();
+      if(btn.dataset.tab==='agenda') renderAgenda();
+      if(btn.dataset.tab==='voorbeeld') renderVoorbeeld();
+      if(btn.dataset.tab==='cycli') renderCycleList();
+    }catch(e){ console.error('Render error:',e); alert('Fout bij tonen: '+e.message); }
+  });
+});
+function goTab(name){ document.querySelector(`nav button[data-tab=${name}]`).click(); }
+document.getElementById('fabAdd').addEventListener('click',()=>{
+  // open kaal invoerformulier zonder een tab actief te maken
+  document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('main section').forEach(s=>s.classList.remove('active'));
+  document.getElementById('tab-vandaag').classList.add('active');
+  renderVandaag('bare'); // kaal formulier, geen begroeting
+});
+document.getElementById('newCycleBtn').addEventListener('click', async (ev)=>{
+  const btn=ev.currentTarget;
+  const afgerondeCyclus = huidigeCyclus();
+  // mail de zojuist afgeronde cyclus automatisch (met PDF), als er genoeg data is
+  if(afgerondeCyclus && afgerondeCyclus.days.length >= 10 && (window.Android ? confirm('Wil je de kaart van de afgeronde cyclus als PDF bewaren of delen?') : (sb && currentUser))){
+    btn.disabled=true; btn.textContent='PDF maken…';
+    const ok = await sendCycleMail(afgerondeCyclus, true);
+    btn.textContent = ok ? '✓ Kaart klaar' : '+ Nieuwe cyclus starten';
+  }
+  startNewCycle(todayISO());
+  await saveData();
+  btn.disabled=false;
+  btn.innerHTML='+ Nieuwe cyclus starten (dag 1 = eerste dag bloeding)';
+  goTab('vandaag');
+});
+
+/* ---- Vandaag: status + invoer ---- */
+function renderVandaag(editIdx=null){
+  const cycle=huidigeCyclus();
+  const forceNew = editIdx==='new' || editIdx==='bare';
+  const bare = editIdx==='bare'; // kaal formulier zonder begroeting
+  if(forceNew) editIdx=null;
+  const editingInit = editIdx!==null;
+  const today = todayISO();
+
+  // Check: is vandaag al ingevuld?
+  const todayIdx = (!editingInit && !forceNew)? cycle.days.findIndex(d=>d.date===today) : -1;
+  const todayDay = todayIdx!==-1 ? cycle.days[todayIdx] : null;
+  // "compleet" = meer dan alleen temperatuur (dus ook slijm, bloeding of notitie)
+  const todayCompleet = todayDay && (todayDay.cervixAfk || todayDay.ervaren ||
+    todayDay.bloeding || (todayDay.extra && todayDay.extra.length) || (todayDay.note && todayDay.note.length));
+
+  // Alleen "al ingevuld"-overzicht tonen als de dag compleet is
+  if(todayCompleet && !editingInit){
+    const status = computeStatus(cycle);
+    document.getElementById('headerSub').textContent = `Cyclus ${cycle.nummer} · dag ${cycle.days.length}`;
+    const pred = computePrediction();
+    const predHtml = predictionCardHtml(pred);
+    const d=cycle.days[todayIdx];
+    document.getElementById('tab-vandaag').innerHTML=`
+    ${greetingCardHtml(cycle)}
+    ${predHtml}
+    <div class="card">
+      <h2>Vandaag al ingevuld</h2>
+      <p style="font-size:0.85rem; margin:4px 0;">
+        Temperatuur: <b>${d.temp?d.temp+'°C'+(d.gestoord?' (gestoord)':''):'—'}</b> &nbsp;·&nbsp;
+        Slijm: <b>${d.cervixAfk||'—'}</b> &nbsp;·&nbsp;
+        Bloeding: <b>${d.bloeding||'geen'}</b>
+        ${d.note?`<br><span class="muted">${d.note}</span>`:''}
+      </p>
+      <button class="secondary" style="margin-top:10px;" id="editTodayBtn">✏️ Vandaag bewerken</button>
+    </div>`;
+    document.getElementById('editTodayBtn').addEventListener('click',()=>renderVandaag(todayIdx));
+    return;
+  }
+
+  // Als vandaag alleen temperatuur heeft (ochtendmeting), open dan het formulier
+  // vooringevuld op die dag, zodat de rest makkelijk aangevuld kan worden.
+  let prefillToday = false;
+  if(todayDay && !todayCompleet && !editingInit && !forceNew){
+    editIdx = todayIdx;
+    prefillToday = true;
+  }
+  // herbereken na mogelijke aanpassing
+  const editingNow = editIdx!==null;
+  const dayNow = editingNow ? cycle.days[editIdx] : null;
+  // bij prefill tonen we het als "vandaag invullen" mét begroeting, niet als kale edit
+  const showAsEdit = editingNow && !prefillToday;
+
+  const dayNum = editingNow? editIdx+1 : cycle.days.length+1;
+  const suggestedDate = editingNow? dayNow.date :
+    (cycle.days.length? addDays(cycle.days[cycle.days.length-1].date,1) : cycle.startDate);
+  const day = dayNow;
+  const editing = editingNow;
+  const status = computeStatus(cycle);
+  document.getElementById('headerSub').textContent =
+    `Cyclus ${cycle.nummer} · dag ${cycle.days.length}`;
+
+  const el=document.getElementById('tab-vandaag');
+  const pred = (editing && !prefillToday)? null : computePrediction();
+  const predHtml = predictionCardHtml(pred);
+  el.innerHTML = `
+  ${bare? `<div class="card" style="display:flex; justify-content:space-between; align-items:center; padding:13px 16px;">
+    <span style="font-family:'Fraunces',Georgia,serif; color:var(--plum-dark); font-size:1.08rem; font-weight:600;">Dag invullen</span>
+    <button class="secondary" id="bareBackBtn" style="margin:0; width:auto; padding:6px 14px;">← Terug</button>
+  </div>` : ''}
+  ${bare? '' : ((!showAsEdit)? greetingCardHtml(cycle) : '')}
+  ${(!bare && showAsEdit)? `<div class="status-hero ${status.cls}">
+    <div class="big">${status.label}</div>
+    <div class="why">${status.why}</div>
+  </div>` : ''}
+  ${bare? '' : predHtml}
+  <div class="card">
+    <h2>${editing? 'Dag '+dayNum+' bewerken' : (bare? 'Gegevens' : 'Cyclus '+cycle.nummer+' · dag '+dayNum+' invoeren')}</h2>
+    <label>Datum</label>
+    <input type="date" id="f_date" value="${suggestedDate}">
+
+    <div class="form-sec"><span class="emoji">🌡️</span> Temperatuur</div>
+    <div class="row">
+      <div><label>Temperatuur (°C)</label>
+        <input type="number" step="0.01" min="35" max="39" id="f_temp"
+          placeholder="36.50" value="${day&&day.temp?day.temp:''}"></div>
+      <div><label>Meettijd</label>
+        <input type="time" id="f_meettijd" value="${day&&day.meettijd?day.meettijd:'07:00'}"></div>
+    </div>
+    <div class="toggle-row">
+      <span>&#9888;&#65039; Meting gestoord <span class="muted">(gebroken nacht, laat, alcohol...)</span></span>
+      <label class="switch"><input type="checkbox" id="f_gestoord" ${day&&day.gestoord?'checked':''}>
+      <span class="slider"></span></label>
+    </div>
+
+    <div class="form-sec"><span class="emoji">🩸</span> Bloeding</div>
+    <div class="chip-row" id="f_bloeding">
+      <div class="chip" data-v="">geen</div><div class="chip" data-v="licht">licht/spotting</div>
+      <div class="chip" data-v="normaal">normaal</div><div class="chip" data-v="sterk">sterk</div>
+    </div>
+
+    <div class="form-sec"><span class="emoji">💧</span> Cervixslijm</div>
+    <label>Ervaren / voelen</label>
+    <select id="f_ervaren">
+      ${ERVAREN_OPTIES.map(o=>`<option value="${o.value}">${o.label}</option>`).join('')}
+    </select>
+    <label>Uiterlijk</label>
+    <select id="f_uiterlijk_sel">
+      ${UITERLIJK_OPTIES.map(o=>`<option value="${o.value}">${o.label}</option>`).join('')}
+    </select>
+    <div id="f_afkorting_preview" style="margin-top:6px; font-size:0.82rem; color:var(--plum-dark); font-weight:600;"></div>
+    <label>Extra omschrijving <span class="muted">(optioneel, vrije notitie)</span></label>
+    <input type="text" id="f_uiterlijk" placeholder="bv. een beetje taal-elastisch, met witte draadjes" value="${day&&day.uiterlijk?day.uiterlijk:''}">
+
+    <div class="form-sec"><span class="emoji">🌿</span> Baarmoederhals <span class="muted" style="font-weight:400;">(optioneel)</span></div>
+    <div class="chip-row" id="f_bmopen">
+      <div class="chip" data-v="gesloten">gesloten •</div>
+      <div class="chip" data-v="deels">deels open ○</div>
+      <div class="chip" data-v="helemaal">open ◯</div>
+    </div>
+    <div class="chip-row" id="f_bmhard" style="margin-top:6px;">
+      <div class="chip" data-v="hard">hard</div><div class="chip" data-v="zacht">zacht</div>
+    </div>
+
+    <div class="form-sec"><span class="emoji">✨</span> Overig</div>
+    <div class="chip-row" id="f_extra">
+      <div class="chip" data-v="O">O ovulatiepijn</div><div class="chip" data-v="B">B borstsymptoom</div>
+      <div class="chip" data-v="X">X gemeenschap</div>
+    </div>
+    <label>Gemoedstand</label>
+    <select id="f_gemoedstand">
+      ${GEMOEDSTAND_OPTIES.map(o=>`<option value="${o.value}">${o.label}</option>`).join('')}
+    </select>
+    <label>Bijzonderheden / storingen</label>
+    <textarea id="f_note" placeholder="bv. gebroken nacht, ziek, reis...">${day&&day.note?day.note:''}</textarea>
+    <button class="primary" id="saveDayBtn">${editing?'Wijzigingen opslaan':'Dag opslaan'}</button>
+    ${editing?'<button class="secondary" id="cancelEditBtn">Annuleren</button>':''}
+  </div>`;
+
+  const state={ bloeding:day?day.bloeding:'', bmopen:day?day.bmOpening:null,
+    bmhard:day?day.bmStevigheid:null,
+    extra:new Set(day&&day.extra? day.extra.split(','):[]) };
+  setupChips('f_bloeding', v=>state.bloeding=v, true, state.bloeding);
+  setupChips('f_bmopen', v=>state.bmopen=(state.bmopen===v?null:v), true, state.bmopen);
+  setupChips('f_bmhard', v=>state.bmhard=(state.bmhard===v?null:v), true, state.bmhard);
+  setupChips('f_extra', v=>{ state.extra.has(v)?state.extra.delete(v):state.extra.add(v); }, false, null, state.extra);
+
+  // Cervixslijm dropdowns + afleiding
+  const ervarenSel = document.getElementById('f_ervaren');
+  const uiterlijkSel = document.getElementById('f_uiterlijk_sel');
+  const gemoedSel = document.getElementById('f_gemoedstand');
+  function updateAfkPreview(){
+    const afk = deriveAfkorting(ervarenSel.value, uiterlijkSel.value);
+    const el = document.getElementById('f_afkorting_preview');
+    if(afk) el.textContent = '→ Afkorting: ' + afk;
+    else el.textContent = '';
+  }
+  ervarenSel.addEventListener('change', updateAfkPreview);
+  uiterlijkSel.addEventListener('change', updateAfkPreview);
+  // Pre-selectie bij bewerken
+  if(day&&day.ervaren) ervarenSel.value = day.ervaren;
+  if(day&&day.uiterlijkSel) uiterlijkSel.value = day.uiterlijkSel;
+  if(day&&day.gemoedstand) gemoedSel.value = day.gemoedstand;
+  // Fallback: als oude data geen ervaren/uiterlijkSel heeft maar wel cervixAfk
+  if(day&&day.cervixAfk&&!day.ervaren){
+    const fallback={'d':'droog','Ø':'niets','v':'vochtig','S':'vochtig','S+':'nat'};
+    ervarenSel.value = fallback[day.cervixAfk]||'';
+    const uitFallback={'d':'niets','Ø':'niets','v':'niets','S':'dik','S+':'helder'};
+    uiterlijkSel.value = uitFallback[day.cervixAfk]||'';
+  }
+  updateAfkPreview();
+  document.getElementById('saveDayBtn').addEventListener('click', async ()=>{
+    const ervVal = document.getElementById('f_ervaren').value;
+    const uitVal = document.getElementById('f_uiterlijk_sel').value;
+    const newDay={
+      date:document.getElementById('f_date').value||suggestedDate,
+      temp:document.getElementById('f_temp').value||null,
+      meettijd:document.getElementById('f_meettijd').value||null,
+      gestoord:document.getElementById('f_gestoord').checked,
+      bloeding:state.bloeding||'',
+      ervaren:ervVal||null,
+      uiterlijkSel:uitVal||null,
+      cervixAfk:deriveAfkorting(ervVal, uitVal),
+      uiterlijk:document.getElementById('f_uiterlijk').value||'',
+      bmOpening:state.bmopen||null, bmStevigheid:state.bmhard||null,
+      extra:[...state.extra].join(','),
+      gemoedstand:document.getElementById('f_gemoedstand').value||'',
+      note:document.getElementById('f_note').value||''
+    };
+    if(editing) cycle.days[editIdx]=newDay; else cycle.days.push(newDay);
+    cycle.days.sort((a,b)=>a.date<b.date?-1:1); // altijd op datum gesorteerd houden
+    await saveData();
+    goTab('kaart');
+  });
+  if(editing) document.getElementById('cancelEditBtn').addEventListener('click',()=>renderVandaag());
+  const bb=document.getElementById('bareBackBtn');
+  if(bb) bb.addEventListener('click',()=>goTab('vandaag'));
+}
+function setupChips(id,onChange,single,preselect,preSet){
+  const g=document.getElementById(id); if(!g) return;
+  g.querySelectorAll('.chip').forEach(chip=>{
+    if(single && preselect!==null && chip.dataset.v===preselect) chip.classList.add('sel');
+    if(!single && preSet && preSet.has(chip.dataset.v)) chip.classList.add('sel');
+    chip.addEventListener('click',()=>{
+      if(single){
+        const was=chip.classList.contains('sel');
+        g.querySelectorAll('.chip').forEach(c=>c.classList.remove('sel'));
+        if(!was) chip.classList.add('sel');
+      } else chip.classList.toggle('sel');
+      onChange(chip.dataset.v);
+    });
+  });
+}
+
+/* ---- Klassieke kaart ---- */
+function renderKaart(){
+  const cycle=currentCycle();
+  document.getElementById('kaartTitle').textContent=
+    `Cycluskaart — cyclus ${cycle.nummer} (start ${fmtDate(cycle.startDate)})`;
+  renderInterpretation(cycle);
+  buildKaart(cycle);
+  renderDayEditList(cycle);
+}
+function renderInterpretation(cycle){
+  const box=document.getElementById('interpretationBox');
+  const start=computeCycleStartInfertile(cycle);
+  const end=computeInfertileAfterOvulation(cycle);
+  let h='';
+  h+=`<p style="margin:4px 0;"><b>Begin cyclus:</b> ${start.rule} — ${start.note? start.note : 'onvruchtbaar t/m dag '+start.lastSafeDay+'.'}</p>`;
+  if(start.detail) h+=`<p class="muted" style="margin:2px 0 8px;">${start.detail}</p>`;
+  if(end.rise) h+=`<p style="margin:4px 0;"><b>Temperatuurstijging:</b> bevestigd op dag ${end.rise.closedAt+1}${end.rise.exception1?' (uitz.regel 1)':''}. Hulplijn ${end.rise.hulplijn.toFixed(2)}°C.</p>`;
+  else h+=`<p class="muted" style="margin:4px 0;">Nog geen bevestigde temperatuurstijging (gestoorde metingen tellen niet mee).</p>`;
+  if(end.peak) h+=`<p style="margin:4px 0;"><b>Piekdag:</b> dag ${end.peak.index+1} → P+3 = avond dag ${end.peak.index+4}.</p>`;
+  else h+=`<p class="muted" style="margin:4px 0;">Nog geen piekdag te bepalen.</p>`;
+  if(end.combined!==null)
+    h+=`<p style="margin:6px 0;"><b style="color:var(--sage-dark);">Onvruchtbaar vanaf avond dag ${end.combined+1}</b> (${end.basis}, wat het laatst komt).</p>`;
+  box.innerHTML=h;
+}
+function buildKaart(cycle){ buildKaartInto('kaartOuter', cycle); }
+function buildKaartInto(targetId, cycle){
+  const axisId = targetId==='kaartOuter' ? 'axisCanvas' : targetId+'_axisCanvas';
+  const tempId = targetId==='kaartOuter' ? 'tempCanvas' : targetId+'_tempCanvas';
+  const days=cycle.days;
+  const n=Math.max(days.length,10);
+  const rise=computeTempRise(cycle);
+  const peak=computePeakDay(cycle);
+  const end=computeInfertileAfterOvulation(cycle);
+  const start=computeCycleStartInfertile(cycle);
+  const dayW=30, labelW=78;
+  const chartH=170, tMin=35.9, tMax=37.6;
+
+  // grafiek: vaste as links + scrollend datadeel
+  const cw=n*dayW, ch=chartH;
+  // DPR begrenzen zodat het brede canvas nooit de browserlimiet (~4096px) overschrijdt.
+  // Anders rendert de temperatuurlijn halverwege een lange kaart niet meer.
+  const MAX_CANVAS_W = 4000;
+  let DPR = Math.min(window.devicePixelRatio||1, 3);
+  if(cw * DPR > MAX_CANVAS_W){ DPR = Math.max(1, MAX_CANVAS_W / cw); }
+  let html=`<div class="kaart-inner">`;
+  html+=`<div class="chart-row">`
+      + `<canvas id="${axisId}" width="${labelW*DPR}" height="${ch*DPR}" class="axis-canvas" style="width:${labelW}px;height:${ch}px;"></canvas>`
+      + `<canvas id="${tempId}" width="${cw*DPR}" height="${ch*DPR}" style="display:block;width:${cw}px;height:${ch}px;"></canvas>`
+      + `</div>`;
+  // tabel-rijen
+  const rowUitleg={
+    piek:"De piekdag (P) is de laatste dag met de beste cervixslijmkwaliteit. Daarna telt de app 1·2·3. Op de avond van dag 3 na de piek is het slijmsymptoom afgesloten.",
+    safk:"De cervixslijm-afkorting van die dag: d (droog), Ø (niets), v (vochtig), S (dik/wit/romig), S+ (helder/rekbaar/als eiwit). S+ is de meest vruchtbare kwaliteit.",
+    dagnr:"De dag van je cyclus. Dag 1 is de eerste dag van je menstruatie.",
+    datum:"De kalenderdatum van die cyclusdag.",
+    meettijd:"Het tijdstip waarop de temperatuur gemeten is. Meet elke dag rond dezelfde tijd — grote afwijkingen kunnen de meting 'gestoord' maken.",
+    bloeding:"Menstruatie of bloeding. Bloedingsdagen worden nooit als vruchtbaar gemarkeerd.",
+    ervaren:"Wat je voelt bij de schaamlippen: droog, vochtig, nat, glibberig. Dit is de helft van je cervixslijm-observatie.",
+    uiterlijk:"Wat je ziet: kleur, structuur, rekbaarheid. Samen met het gevoel bepaalt dit de slijmkwaliteit.",
+    bmh:"De baarmoederhals als optionele dubbele controle. Symbolen: • gesloten, ○ deels open, ◯ open. Met h (hard) of z (zacht). Rond de eisprong: zacht, open, hoog.",
+    extra:"O = ovulatiepijn, B = borstsymptoom, X = gemeenschap. Extra signalen die je kunt noteren.",
+    vrucht:"De interpretatie van de app: v = vruchtbaar, v/ = laatste vruchtbare dag (einde vruchtbare periode na dubbele controle)."
+  };
+  const rows=[
+    {key:'piek', label:'Piekdag (P·1·2·3)'},
+    {key:'safk', label:'S-afkorting'},
+    {key:'dagnr', label:'Cyclusdag'},
+    {key:'datum', label:'Datum'},
+    {key:'meettijd', label:'Meettijd'},
+    {key:'bloeding', label:'Bloeding'},
+    {key:'ervaren', label:'Slijm ervaren/ voelen', tall:true},
+    {key:'uiterlijk', label:'Uiterlijk', tall:true},
+    {key:'bmh', label:'Baarmoederhals'},
+    {key:'extra', label:'O / B / X'},
+    {key:'vrucht', label:'Vruchtbare dagen'}
+  ];
+  html+=`<table class="kaart"><tbody>`;
+  for(const row of rows){
+    html+=`<tr><th class="rowlabel" data-uitleg="${row.key}" style="cursor:pointer;">${row.label}</th>`;
+    for(let i=0;i<n;i++){
+      const d=days[i];
+      let cls='', content='';
+      if(i===start.lastSafeDay-1 && start.lastSafeDay>0) cls+=' streep-r';
+      if(d){
+        switch(row.key){
+          case 'piek':
+            if(peak && i===peak.index){ content='P'; cls+=' rise'; }
+            else if(peak && i>peak.index && i<=peak.index+3){ content=(i-peak.index)+''; cls+=' rise'; }
+            break;
+          case 'safk':
+            content=d.cervixAfk||'';
+            if(d.cervixAfk){
+              const sqmap={'d':'sq-d','Ø':'sq-0','v':'sq-v','S':'sq-S','S+':'sq-Sp'};
+              cls+=' '+(sqmap[d.cervixAfk]||'');
+            }
+            break;
+          case 'dagnr': content=i+1; break;
+          case 'datum': content=fmtDate(d.date).replace(' ',''); break;
+          case 'meettijd': content=d.meettijd||''; break;
+          case 'bloeding':
+            if(d.bloeding==='licht') cls+=' bloed-licht';
+            else if(d.bloeding) cls+=' bloed';
+            break;
+          case 'ervaren': cls+=' slijmcell'; content=ervarenText(d); break;
+          case 'uiterlijk': cls+=' slijmcell'; content=uiterlijkText(d); break;
+          case 'bmh':
+            if(d.bmOpening){
+              const sym=d.bmOpening==='gesloten'?'•':(d.bmOpening==='deels'?'○':'◯');
+              content=sym+(d.bmStevigheid? (d.bmStevigheid==='hard'?'h':'z') :'');
+            }
+            break;
+          case 'extra': content=(d.extra||'').replaceAll(',',' '); break;
+          case 'vrucht':
+            const st=dayFertility(i,start,end,d);
+            if(st==='v'){ content='v'; cls+=' vrucht-v'; }
+            else if(st==='v/'){ content='v/'; cls+=' vrucht-v'; }
+            break;
+        }
+      }
+      html+=`<td class="${cls.trim()}">${content}</td>`;
+    }
+    html+=`</tr>`;
+  }
+  html+=`</tbody></table></div>`;
+  document.getElementById(targetId).innerHTML=html;
+
+  // rijlabels klikbaar → uitleg-popup
+  document.getElementById(targetId).querySelectorAll('th.rowlabel[data-uitleg]').forEach(th=>{
+    th.addEventListener('click',()=>{
+      const key=th.dataset.uitleg;
+      showColumnInfo(th.textContent.trim(), rowUitleg[key]||'');
+    });
+  });
+
+  const dark=document.body.classList.contains('dark');
+  const C={
+    gridMajor: dark?'#4A3E52':'#DCCFC7',
+    gridMinor: dark?'#332A3A':'#F0E7E1',
+    labelMajor: dark?'#E0BFD0':'#5B3A4B',
+    labelMinor: dark?'#B8A9B4':'#8a7a83',
+    line: dark?'#C9A9BD':'#B79AAA',   // zachtere verbindingslijn (minder zwart)
+    dot: dark?'#E0BFD0':'#5B3A4B',     // punten blijven duidelijk donker
+    rose:'#C97B84', amber:'#D4A020',
+    dotBg: dark?'#2A2230':'#fff',
+    lowNum: dark?'#B8A9B4':'#6b5b64',
+    axisBg: dark?'#2A2230':'#ffffff'
+  };
+  const top=8, bottom=ch-14;
+  const yFor=t=>top+(tMax-t)/(tMax-tMin)*(bottom-top);
+  const xFor=i=>i*dayW+dayW/2; // datacanvas begint bij 0
+
+  // === Vaste as (cijfers links) ===
+  const ax=document.getElementById(axisId), actx=ax.getContext('2d');
+  actx.setTransform(DPR,0,0,DPR,0,0);
+  actx.clearRect(0,0,labelW,ch);
+  actx.fillStyle=C.axisBg; actx.fillRect(0,0,labelW,ch);
+  for(let t=36.0;t<=37.5+0.001;t+=0.1){
+    const y=yFor(t), major=(Math.round(t*10)%5===0);
+    // korte streepjes aan de rechterrand van de as, zodat de as visueel aansluit op de grafiek
+    actx.strokeStyle= major?C.gridMajor:C.gridMinor;
+    actx.beginPath(); actx.moveTo(labelW-6,y); actx.lineTo(labelW,y); actx.stroke();
+    if(major){ actx.fillStyle=C.labelMajor; actx.font='bold 9.5px sans-serif'; actx.fillText(t.toFixed(1),34,y+3); }
+    else { actx.fillStyle=C.labelMinor; actx.font='8.5px sans-serif'; actx.fillText(t.toFixed(1),34,y+3); }
+  }
+
+  // === Scrollende grafiek (data) ===
+  const cv=document.getElementById(tempId), ctx=cv.getContext('2d');
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  ctx.clearRect(0,0,cw,ch);
+  ctx.font='9px sans-serif';
+  for(let t=36.0;t<=37.5+0.001;t+=0.1){
+    const y=yFor(t);
+    ctx.strokeStyle=(Math.round(t*10)%5===0)?C.gridMajor:C.gridMinor;
+    ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(cw,y); ctx.stroke();
+  }
+  for(let i=0;i<n;i++){
+    ctx.strokeStyle=C.gridMinor; ctx.beginPath();
+    ctx.moveTo(i*dayW,top); ctx.lineTo(i*dayW,bottom); ctx.stroke();
+  }
+  if(rise){
+    const y=yFor(rise.hulplijn);
+    ctx.strokeStyle=C.rose; ctx.setLineDash([5,4]);
+    ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(cw,y); ctx.stroke(); ctx.setLineDash([]);
+  }
+  ctx.strokeStyle=C.line; ctx.lineWidth=1.4; ctx.beginPath();
+  let started=false;
+  days.forEach((d,i)=>{
+    if(!d.temp){ started=false; return; }
+    const t=parseFloat(d.temp);
+    const x=xFor(i),y=yFor(t);
+    if(!started){ctx.moveTo(x,y);started=true;} else ctx.lineTo(x,y);
+  });
+  ctx.stroke();
+  days.forEach((d,i)=>{
+    if(!d.temp) return;
+    const t=parseFloat(d.temp), x=xFor(i), y=yFor(t);
+    if(d.gestoord){
+      ctx.beginPath(); ctx.arc(x,y,3.4,0,7);
+      ctx.strokeStyle=C.amber; ctx.lineWidth=1.4; ctx.stroke();
+      ctx.fillStyle=C.dotBg; ctx.fill();
+      ctx.strokeStyle=C.line; ctx.lineWidth=1.4;
+      return;
+    }
+    const isRise=rise&&rise.riseIdx.includes(i);
+    ctx.beginPath(); ctx.arc(x,y,3.2,0,7);
+    ctx.fillStyle=isRise?C.rose:C.dot; ctx.fill();
+    if(isRise){ ctx.fillStyle=C.rose; ctx.font='10px sans-serif'; ctx.textAlign='center';
+      ctx.fillText('▲',x,y-7); ctx.textAlign='left'; }
+  });
+  if(rise){
+    ctx.fillStyle=C.lowNum; ctx.font='9px sans-serif'; ctx.textAlign='center';
+    rise.lowIdx.forEach((idx,j)=>{ ctx.fillText(String(6-j), xFor(idx), bottom+10); });
+    ctx.textAlign='left';
+  }
+}
+function ervarenText(d){
+  // Nieuw formaat: ervaren-veld
+  if(d.ervaren){
+    return {'droog':'droog/ruw','niets':'niets gevoeld','vochtig':'vochtig','nat':'nat/glibberig'}[d.ervaren]||'';
+  }
+  // Fallback voor oude data
+  if(!d.cervixAfk) return '';
+  return {'d':'droog/ruw','Ø':'niets gevoeld','v':'vochtig','S':'vochtig','S+':'nat/glibberig'}[d.cervixAfk]||'';
+}
+function uiterlijkText(d){
+  if(d.uiterlijkSel){
+    return {'niets':'niets gezien','dik':'dik/wit/troebel','kleverig':'klonterig/kleverig',
+      'taal':'taal-elastisch','helder':'doorzichtig/glashelder','eiwit':'als rauw eiwit/rekbaar',
+      'vloei':'vloeibaar','rood':'roodachtig'}[d.uiterlijkSel]||'';
+  }
+  return (d.uiterlijk||'').slice(0,22);
+}
+function dayFertility(i,start,end,day){
+  // in bijzondere fase (post-pil/borstvoeding) geen automatische v-markering
+  if(typeof isSpecialMode==='function' && isSpecialMode()) return '';
+  // bloedingsdagen zijn nooit vruchtbaar in de kaart-markering
+  if(day && day.bloeding) return '';
+  if(end.combined!==null){
+    if(i===end.combined) return 'v/';
+    if(i>end.combined) return '';
+  }
+  if(i < start.lastSafeDay) return '';
+  return 'v';
+}
+function renderDayEditList(cycle){
+  const el=document.getElementById('dayEditList');
+  if(cycle.days.length===0){ el.innerHTML='<p class="muted">Nog geen dagen.</p>'; return; }
+  el.innerHTML=cycle.days.map((d,i)=>{
+    const emoji={'blij':'😊','neutraal':'😐','moe':'😴','prikkel':'😤','verdrietig':'😢',
+      'angstig':'😰','energiek':'⚡','romantisch':'💕','gevoelig':'🥺'}[d.gemoedstand]||'';
+    return `<div class="daylist-item">
+      <span>Dag ${i+1} · ${fmtDate(d.date)} · ${d.temp? d.temp+'°'+(d.gestoord?' (gestoord)':'') :'—'} · ${d.cervixAfk||'—'}${emoji?' · '+emoji:''}</span>
+      <span>
+        <button data-edit="${i}">bewerk</button>
+        <button data-del="${i}" style="color:var(--danger);">wis</button>
+      </span>
+    </div>`;}).join('');
+  el.querySelectorAll('[data-edit]').forEach(b=>b.addEventListener('click',()=>{
+    goTab('vandaag'); renderVandaag(parseInt(b.dataset.edit));
+  }));
+  el.querySelectorAll('[data-del]').forEach(b=>b.addEventListener('click',async ()=>{
+    if(b.dataset.armed!=='1'){
+      b.dataset.armed='1'; b.textContent='zeker?';
+      setTimeout(()=>{ b.dataset.armed='0'; b.textContent='wis'; }, 2500);
+      return;
+    }
+    cycle.days.splice(parseInt(b.dataset.del),1);
+    await saveData(); renderKaart();
+  }));
+}
+
+/* ---- Cycluslijst ---- */
+function renderCycleList(){
+  const list=document.getElementById('cycleList');
+  const huidigeId = huidigeCyclus().id;
+  list.innerHTML=DATA.cycles.slice().reverse().map(c=>{
+    const r=computeTempRise(c);
+    const status=r? `stijging dag ${r.riseIdx[0]+1}` : `${c.days.length} dagen`;
+    const isSelected = c.id===currentCycleId;
+    const isHuidig = c.id===huidigeId;
+    const selStyle = isSelected
+      ? 'background:linear-gradient(150deg, var(--cream), #F3E3EC); border:1.5px solid var(--rose);'
+      : 'border:1.5px solid transparent;';
+    const huidigLabel = isHuidig
+      ? `<span style="display:inline-block; margin-left:8px; font-size:0.66rem; font-weight:700; color:#fff;
+          background:var(--sage-dark); padding:2px 8px; border-radius:10px; vertical-align:middle;">Huidige</span>` : '';
+    return `<div class="citem-wrap" style="${selStyle} border-radius:14px; padding:13px 12px; margin-bottom:8px; position:relative; transition:background .15s;">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div class="citem" data-id="${c.id}" style="cursor:pointer; flex:1;">
+          <b>Cyclus ${c.nummer}</b>${huidigLabel}<br><span class="muted">${fmtDate(c.startDate)} · ${status}</span>
+        </div>
+        <button class="cyc-menu-btn" data-id="${c.id}" aria-label="Meer opties" style="background:none; border:none;
+          color:var(--text-soft); font-size:1.3rem; cursor:pointer; padding:4px 10px; line-height:1; border-radius:8px;">⋯</button>
+      </div>
+      <div class="cyc-menu" data-id="${c.id}" style="display:none; position:absolute; right:8px; top:46px; z-index:5;
+        background:var(--surface); border:1px solid var(--line); border-radius:12px; overflow:hidden;
+        box-shadow:0 6px 20px rgba(91,58,75,0.18); min-width:150px;">
+        <button class="cyc-mail" data-id="${c.id}" style="display:block; width:100%; text-align:left; background:none;
+          border:none; padding:12px 16px; font-size:0.86rem; color:var(--text); cursor:pointer;">Mailen</button>
+        <button class="cyc-del" data-id="${c.id}" style="display:block; width:100%; text-align:left; background:none;
+          border:none; border-top:1px solid var(--line); padding:12px 16px; font-size:0.86rem; color:#B04A4A; cursor:pointer;">Verwijderen</button>
+      </div>
+    </div>`;
+  }).join('')||'<p class="muted">Nog geen cycli.</p>';
+
+  // bekijken → selecteer (onthouden) + open kaart
+  list.querySelectorAll('.citem').forEach(item=>item.addEventListener('click',()=>{
+    setViewCycle(item.dataset.id); goTab('kaart');
+  }));
+  // drie-puntjes-menu openen/sluiten
+  list.querySelectorAll('.cyc-menu-btn').forEach(btn=>btn.addEventListener('click',(e)=>{
+    e.stopPropagation();
+    const id=btn.dataset.id;
+    const menu=list.querySelector(`.cyc-menu[data-id="${id}"]`);
+    const wasOpen=menu.style.display==='block';
+    list.querySelectorAll('.cyc-menu').forEach(m=>m.style.display='none');
+    menu.style.display=wasOpen?'none':'block';
+  }));
+  // klik buiten het menu sluit het
+  document.addEventListener('click',()=>{
+    list.querySelectorAll('.cyc-menu').forEach(m=>m.style.display='none');
+  });
+  // mailen
+  list.querySelectorAll('.cyc-mail').forEach(b=>b.addEventListener('click', async (e)=>{
+    e.stopPropagation();
+    const c=DATA.cycles.find(x=>x.id===b.dataset.id); if(!c) return;
+    b.textContent='Versturen…'; b.disabled=true;
+    const ok=await sendCycleMail(c, false);
+    b.textContent= ok? '✓ Gemaild' : 'Mailen mislukt'; b.disabled=false;
+    setTimeout(()=>{ list.querySelectorAll('.cyc-menu').forEach(m=>m.style.display='none'); b.textContent='Mailen'; }, 2000);
+  }));
+  // verwijderen
+  list.querySelectorAll('.cyc-del').forEach(b=>b.addEventListener('click', async (e)=>{
+    e.stopPropagation();
+    const c=DATA.cycles.find(x=>x.id===b.dataset.id); if(!c) return;
+    if(DATA.cycles.length<=1){ alert('Je kunt de laatste cyclus niet verwijderen — er moet er altijd minstens één zijn.'); return; }
+    if(!confirm(`Cyclus ${c.nummer} (start ${fmtDate(c.startDate)}) met ${c.days.length} dagen definitief verwijderen? Dit kan niet ongedaan worden gemaakt.`)) return;
+    const idx=DATA.cycles.findIndex(x=>x.id===c.id);
+    DATA.cycles.splice(idx,1);
+    DATA.cycles.forEach((cc,i)=>cc.nummer=i+1);
+    if(currentCycleId===c.id) setViewCycle(DATA.cycles[DATA.cycles.length-1].id);
+    await saveData(); renderCycleList();
+  }));
+}
+
+/* ---- Thema (dag/nacht) ---- */
+async function loadTheme(){
+  let dark=false;
+  try{ if(localStorage.getItem('sensiplan_theme')==='dark') dark=true; }catch(e){}
+  applyTheme(dark);
+}
+function applyTheme(dark){
+  document.body.classList.toggle('dark', dark);
+  const dt=document.getElementById('darkToggle');
+  if(dt) dt.checked=dark;
+}
+
+/* ---- Instellingen popup ---- */
+function openSettings(){
+  const p=document.getElementById('settingsPopup');
+  // vul huidige waarden
+  document.getElementById('darkToggle').checked=document.body.classList.contains('dark');
+  const remOn=getReminderEnabled();
+  document.getElementById('setReminderToggle').checked=remOn;
+  document.getElementById('setReminderTime').value=getReminderTime();
+  document.getElementById('setReminderTimeRow').style.display=remOn?'':'none';
+  document.getElementById('setMailEmail').textContent=currentUser?currentUser.email:'—';
+  const mp=document.getElementById('modePostPil'); if(mp) mp.checked=localStorage.getItem('cyclus_mode_postpil')==='1';
+  const mb=document.getElementById('modeBorstvoeding'); if(mb) mb.checked=localStorage.getItem('cyclus_mode_borstvoeding')==='1';
+  const pt=document.getElementById('pinToggle'); if(pt) pt.checked=hasPinSet();
+  const pc=document.getElementById('pinChangeBtn'); if(pc) pc.style.display=hasPinSet()?'':'none';
+  updateReminderStatus();
+  p.style.display='flex';
+}
+document.getElementById('pinToggle').addEventListener('change',(e)=>{
+  if(e.target.checked){
+    document.getElementById('settingsPopup').style.display='none';
+    openPinSet();
+  } else {
+    if(confirm('Pincodevergrendeling uitschakelen?')){
+      setPin(null);
+      document.getElementById('pinChangeBtn').style.display='none';
+    } else {
+      e.target.checked=true;
+    }
+  }
+});
+document.getElementById('pinChangeBtn').addEventListener('click',()=>{
+  document.getElementById('settingsPopup').style.display='none';
+  openPinSet();
+});
+document.getElementById('exportDataBtn').addEventListener('click',()=>{
+  try{
+    if(window.Android){
+      Android.shareFile('cyclus-backup-'+todayISO()+'.json', JSON.stringify(DATA,null,2), 'application/json');
+      markBackupDone();
+      return;
+    }
+    const blob=new Blob([JSON.stringify(DATA,null,2)],{type:'application/json'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url; a.download='cycluss-backup-'+todayISO()+'.json';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(()=>URL.revokeObjectURL(url), 1000);
+  }catch(e){ alert('Back-up maken mislukt: '+e.message); }
+});
+document.getElementById('importDataBtn').addEventListener('click',()=>{
+  document.getElementById('importDataFile').click();
+});
+document.getElementById('importDataFile').addEventListener('change',(e)=>{
+  const file=e.target.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=async ()=>{
+    try{
+      const imported=JSON.parse(reader.result);
+      if(!imported || !imported.cycles) throw new Error('Dit lijkt geen geldig back-upbestand.');
+      const huidigPunten=countDataPoints(DATA);
+      const importPunten=countDataPoints(imported);
+      if(!confirm(`Back-up terugzetten?\n\nHuidige gegevens: ${huidigPunten} dagen\nBack-up: ${importPunten} dagen\n\nJe huidige gegevens worden vervangen door de back-up.`)) return;
+      DATA=imported;
+      if(!DATA.cycles) DATA.cycles=[];
+      currentCycleId=DATA.cycles.length? DATA.cycles[DATA.cycles.length-1].id : null;
+      await saveData();
+      alert('Back-up teruggezet.');
+      document.getElementById('settingsPopup').style.display='none';
+      renderVandaag(); goTab('vandaag');
+    }catch(err){ alert('Terugzetten mislukt: '+err.message); }
+  };
+  reader.readAsText(file);
+});
+function updateReminderStatus(){
+  const el=document.getElementById('setReminderStatus'); if(!el) return;
+  if(!('Notification' in window)){ el.textContent='Meldingen worden niet ondersteund op dit toestel.'; return; }
+  if(Notification.permission==='denied'){ el.textContent='Meldingen zijn geblokkeerd in je browserinstellingen.'; return; }
+  el.textContent = getReminderEnabled() ? 'Je krijgt elke dag een melding rond de ingestelde tijd.' : '';
+}
+document.getElementById('settingsBtn').addEventListener('click', openSettings);
+document.getElementById('settingsClose').addEventListener('click', ()=>{
+  document.getElementById('settingsPopup').style.display='none';
+});
+
+/* ---- Bijzondere fase (post-pil / borstvoeding) ---- */
+function getSpecialMode(){
+  return {
+    postpil: localStorage.getItem('cyclus_mode_postpil')==='1',
+    borstvoeding: localStorage.getItem('cyclus_mode_borstvoeding')==='1'
+  };
+}
+function isSpecialMode(){
+  const m=getSpecialMode(); return m.postpil || m.borstvoeding;
+}
+function bindModeToggle(id, key){
+  const el=document.getElementById(id); if(!el) return;
+  el.checked = localStorage.getItem(key)==='1';
+  el.addEventListener('change',(e)=>{
+    localStorage.setItem(key, e.target.checked?'1':'0');
+    // ververs de zichtbare tab
+    const active=document.querySelector('nav button.active');
+    if(active) active.click();
+  });
+}
+bindModeToggle('modePostPil','cyclus_mode_postpil');
+bindModeToggle('modeBorstvoeding','cyclus_mode_borstvoeding');
+document.getElementById('settingsPopup').addEventListener('click',(e)=>{
+  if(e.target===document.getElementById('settingsPopup'))
+    document.getElementById('settingsPopup').style.display='none';
+});
+document.getElementById('darkToggle').addEventListener('change',(e)=>{
+  const dark=e.target.checked;
+  applyTheme(dark);
+  try{ localStorage.setItem('sensiplan_theme', dark?'dark':'light'); }catch(e){}
+  if(document.getElementById('tab-kaart').classList.contains('active')) renderKaart();
+});
+document.getElementById('setReminderToggle').addEventListener('change', async (e)=>{
+  if(e.target.checked){
+    const granted=await requestNotificationPermission();
+    if(!granted){ e.target.checked=false; updateReminderStatus(); return; }
+    setReminderEnabled(true);
+    document.getElementById('setReminderTimeRow').style.display='';
+    scheduleDailyReminder();
+  } else {
+    setReminderEnabled(false);
+    document.getElementById('setReminderTimeRow').style.display='none';
+    if(window._reminderTimeout) clearTimeout(window._reminderTimeout);
+  }
+  updateReminderStatus();
+});
+document.getElementById('setReminderTime').addEventListener('change',(e)=>{
+  setReminderTime(e.target.value);
+  scheduleDailyReminder();
+});
+document.getElementById('setMailSend').addEventListener('click', async ()=>{
+  const btn=document.getElementById('setMailSend');
+  btn.textContent='PDF maken…'; btn.disabled=true;
+  const ok=await sendCycleMail(huidigeCyclus(), false);
+  btn.disabled=false;
+  btn.textContent = ok ? '✓ Klaar' : 'Deel PDF-kaart';
+  setTimeout(()=>{ btn.textContent='Deel PDF-kaart'; }, 3000);
+});
+document.getElementById('testNotifBtn').addEventListener('click', async ()=>{
+  if(!('Notification' in window)){
+    alert('Dit toestel/deze browser ondersteunt geen meldingen.');
+    return;
+  }
+  let perm=Notification.permission;
+  if(perm==='default'){
+    perm=await Notification.requestPermission();
+  }
+  if(perm!=='granted'){
+    alert('Meldingen zijn niet toegestaan. Ga naar de instellingen van je telefoon → deze app/website → sta meldingen toe.');
+    return;
+  }
+  // Zorg dat er een service worker is (registreer + wacht indien nodig)
+  try{
+    if('serviceWorker' in navigator){
+      let reg = await navigator.serviceWorker.getRegistration();
+      if(!reg){
+        reg = await navigator.serviceWorker.register('sw.js');
+      }
+      await navigator.serviceWorker.ready; // wacht tot actief
+      if(reg && reg.showNotification){
+        await reg.showNotification('🌷 Cycluss — test', { body:'Gelukt! Je meldingen werken.' });
+        return;
+      }
+    }
+    // fallback
+    new Notification('🌷 Cycluss — test', { body:'Gelukt! Je meldingen werken.' });
+  }catch(err){
+    alert('Melding kon niet worden getoond: '+err.message+'\n\nControleer of sw.js goed geüpload is naast index.html.');
+  }
+});
+
+/* ---- Kolom-uitleg popup ---- */
+function showColumnInfo(title, text){
+  document.getElementById('colInfoTitle').textContent=title;
+  document.getElementById('colInfoText').textContent=text;
+  document.getElementById('colInfoPopup').style.display='flex';
+}
+document.getElementById('colInfoClose').addEventListener('click',()=>{
+  document.getElementById('colInfoPopup').style.display='none';
+});
+document.getElementById('colInfoPopup').addEventListener('click',(e)=>{
+  if(e.target===document.getElementById('colInfoPopup'))
+    document.getElementById('colInfoPopup').style.display='none';
+});
+
+/* ---- Begroeting met bijbeltekst (HSV) en fase-uitleg ---- */
+const BIJBELTEKSTEN = [
+  {t:"Ik loof U omdat ik ontzagwekkend wonderlijk gemaakt ben; wonderlijk zijn Uw werken, mijn ziel weet dat zeer goed.", r:"Psalm 139:14"},
+  {t:"Alles heeft zijn tijd, en ieder ding onder de hemel heeft zijn uur.", r:"Prediker 3:1"},
+  {t:"De HEERE is mijn Herder, mij ontbreekt niets.", r:"Psalm 23:1"},
+  {t:"Wees in geen ding bezorgd, maar laat uw verlangens in alles, door bidden en smeken, met dankzegging bekend worden bij God.", r:"Filippenzen 4:6"},
+  {t:"Werp al uw zorgen op Hem, want Hij zorgt voor u.", r:"1 Petrus 5:7"},
+  {t:"Zie, kinderen zijn het eigendom van de HEERE, de vrucht van de schoot is Zijn beloning.", r:"Psalm 127:3"},
+  {t:"Dit is de dag die de HEERE gemaakt heeft, laten wij op deze dag ons verheugen en verblijd zijn.", r:"Psalm 118:24"},
+  {t:"Verblijd u altijd in de Heere; ik zeg het opnieuw: Verblijd u.", r:"Filippenzen 4:4"},
+  {t:"Wentel uw weg op de HEERE en vertrouw op Hem: Híj zal het doen.", r:"Psalm 37:5"},
+  {t:"Uw woord is een lamp voor mijn voet en een licht op mijn pad.", r:"Psalm 119:105"},
+  {t:"De HEERE is nabij de gebrokenen van hart, Hij verlost de verbrijzelden van geest.", r:"Psalm 34:19"}
+];
+function verseOfToday(){
+  const d=new Date();
+  const dayOfYear=Math.floor((d-new Date(d.getFullYear(),0,0))/86400000);
+  return BIJBELTEKSTEN[dayOfYear % BIJBELTEKSTEN.length];
+}
+function greetingText(){
+  const h=new Date().getHours();
+  if(h<6) return "Goedenacht";
+  if(h<12) return "Goedemorgen";
+  if(h<18) return "Goedemiddag";
+  return "Goedenavond";
+}
+function phaseDescription(cycle){
+  // Bijzondere fase heeft voorrang
+  const m=getSpecialMode();
+  if(m.borstvoeding)
+    return "Borstvoedingsfase: zolang je volledig borstvoeding geeft, je kind jonger dan 6 maanden is én je nog niet ongesteld bent geweest, is vruchtbaarheid vrijwel uitgesloten (LAM). Zodra één daarvan wegvalt, gelden de gewone regels — maar met extra voorzichtigheid. De app trekt geen automatische conclusie.";
+  if(m.postpil)
+    return "Na de pil: je cyclus moet zich opnieuw instellen en kan onregelmatig zijn. De temperatuurstijging is nog niet betrouwbaar. Let vooral op je cervixslijm en wees voorzichtig. De app trekt geen automatische conclusie.";
+  const n=cycle.days.length;
+  if(n===0) return "Je staat aan het begin van een nieuwe cyclus. Voer je eerste dag in om te beginnen.";
+  const end=computeInfertileAfterOvulation(cycle);
+  const start=computeCycleStartInfertile(cycle);
+  const lastIdx=n-1;
+  const lastDay=cycle.days[lastIdx];
+  if(lastDay && lastDay.bloeding)
+    return `Je bent ongesteld (dag ${n} van je cyclus). Het begin van een nieuwe cyclus — een tijd van rust en herstel.`;
+  if(end.combined!==null && lastIdx>=end.combined)
+    return `Je bevindt je in de onvruchtbare fase na de eisprong (dag ${n}). De dubbele controle is afgesloten.`;
+  if(end.rise && !end.combined)
+    return `Je temperatuur is aan het stijgen (dag ${n}) — de eisprong lijkt achter de rug, maar de dubbele controle is nog niet compleet.`;
+  if(lastIdx < start.lastSafeDay)
+    return `Je bent in de onvruchtbare fase aan het begin van je cyclus (dag ${n}). Let op: zodra er slijm of vocht komt, wordt het vruchtbaar.`;
+  return `Je bevindt je in de vruchtbare fase (dag ${n}). Dit is de tijd rond de eisprong — let goed op je cervixslijm en temperatuur.`;
+}
+function predictionCardHtml(pred){
+  if(!pred) return '';
+  return `<div class="card">
+    <h2>Verwachting <span class="muted" style="font-weight:400; font-size:0.8rem;">indicatie</span></h2>
+    <div style="display:flex; align-items:center; gap:10px; padding:6px 0;">
+      <span style="font-size:1.1rem;">🩸</span>
+      <div style="font-size:0.85rem;">Volgende menstruatie<br><b style="color:var(--plum-dark);">${fmtDateLong(pred.nextMenstru)}</b></div>
+    </div>
+    ${pred.fertileStart?`<div style="display:flex; align-items:center; gap:10px; padding:6px 0; border-top:1px solid var(--line);">
+      <span style="font-size:1.1rem;">🌸</span>
+      <div style="font-size:0.85rem;">Vruchtbaar venster<br><b style="color:var(--plum-dark);">${fmtDate(pred.fertileStart)} – ${fmtDate(pred.fertileEnd)}</b></div>
+    </div>`:''}
+    <p class="muted" style="font-size:0.74rem; margin-top:10px; line-height:1.5;">
+      Schatting op basis van ${pred.count} eerdere ${pred.count===1?'cyclus':'cycli'}
+      (gem. ${pred.avgLen} dagen${pred.avgRise?`, eisprong ~dag ${pred.avgRise}`:''}).
+      Je dagelijkse waarneming blijft altijd leidend.</p>
+  </div>`;
+}
+
+function greetingCardHtml(cycle){
+  const v=verseOfToday();
+  const status=computeStatus(cycle);
+  const bloemWm=`<svg class="bloem-wm" viewBox="0 0 512 512"><g transform="translate(256,256)">
+    ${[0,45,90,135,180,225,270,315].map(a=>`<ellipse rx="52" ry="90" transform="rotate(${a}) translate(0,-78)" fill="#C97B84"/>`).join('')}
+    <circle r="58" fill="#5B3A4B"/></g></svg>`;
+  return `<div class="greeting-card">
+    ${bloemWm}
+    <div class="greeting-hi">${greetingText()}</div>
+    <div class="greeting-verse">"${v.t}"</div>
+    <div class="greeting-ref">— ${v.r} (HSV)</div>
+    <div class="greeting-status ${status.cls}"><span class="dot"></span>${status.label}</div>
+    <div class="greeting-phase">${status.why? '<b style="color:var(--text);">'+status.why+'</b><br><br>' : ''}${phaseDescription(cycle)}</div>
+  </div>`;
+}
+
+/* ---- Agenda: maandoverzicht ---- */
+function buildDayStatusMap(){
+  // map 'YYYY-MM-DD' -> 'bloeding' | 'vrucht' | 'onvrucht'
+  const map={};
+  const special=isSpecialMode();
+  const sexDays=new Set(); // dagen met gemeenschap
+  for(const c of DATA.cycles){
+    const start=computeCycleStartInfertile(c);
+    const end=computeInfertileAfterOvulation(c);
+    c.days.forEach((d,i)=>{
+      if(d.extra && d.extra.includes('X')) sexDays.add(d.date);
+      if(special){
+        // bijzondere fase: geen vruchtbaar/onvruchtbaar-inkleuring, alleen bloeding
+        if(d.bloeding) map[d.date]='bloeding';
+        return;
+      }
+      let st='onvrucht';
+      const f=dayFertility(i,start,end,d);
+      if(f==='v'||f==='v/') st='vrucht';
+      if(d.bloeding) st='bloeding';
+      map[d.date]=st;
+    });
+  }
+  window._sexDays=sexDays; // beschikbaar voor renderAgenda
+  if(special) return map; // geen voorspelling in bijzondere modus
+  // voorspelling: verwachte volgende menstruatie + vruchtbaar venster als 'pred'
+  const pred=computePrediction();
+  if(pred){
+    for(let i=0;i<5;i++){ const dt=addDays(pred.nextMenstru,i); if(!map[dt]) map[dt]='pred'; }
+    if(pred.fertileStart){
+      let dt=pred.fertileStart;
+      while(dt<=pred.fertileEnd){ if(!map[dt]) map[dt]='pred'; dt=addDays(dt,1); }
+    }
+  }
+  return map;
+}
+let _agendaMaand=null; // {y, mo} van de getoonde maand
+function renderAgenda(){
+  const el=document.getElementById('agendaMonths');
+  const map=buildDayStatusMap();
+  const today=todayISO();
+  // bepaal welke maand we tonen (standaard: huidige maand)
+  if(!_agendaMaand){
+    const t=new Date();
+    _agendaMaand={ y:t.getFullYear(), mo:t.getMonth() };
+  }
+  const y=_agendaMaand.y, mo=_agendaMaand.mo;
+  const m=new Date(y,mo,1);
+  const monthName=m.toLocaleDateString('nl-NL',{month:'long',year:'numeric'});
+  document.getElementById('agendaMonthTitle').textContent=
+    monthName.charAt(0).toUpperCase()+monthName.slice(1);
+
+  const dows=['ma','di','wo','do','vr','za','zo'];
+  const firstDow=(new Date(y,mo,1).getDay()+6)%7;
+  const daysInMonth=new Date(y,mo+1,0).getDate();
+  let html=`<div class="month-grid">`;
+  html+=dows.map(d=>`<div class="dow">${d}</div>`).join('');
+  for(let i=0;i<firstDow;i++) html+=`<div class="mday empty"></div>`;
+  for(let d=1;d<=daysInMonth;d++){
+    const iso=`${y}-${String(mo+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const st=map[iso]||'';
+    const isToday=iso===today?' today':'';
+    const hasSex=(window._sexDays&&window._sexDays.has(iso));
+    const sexMark=hasSex?`<span class="sex-dot">♥</span>`:'';
+    html+=`<div class="mday ${st}${isToday}" data-datum="${iso}" style="cursor:pointer;">${d}${sexMark}</div>`;
+  }
+  html+=`</div>`;
+  el.innerHTML=html;
+  el.querySelectorAll('.mday[data-datum]').forEach(cell=>{
+    cell.addEventListener('click',()=>openSexPopup(cell.dataset.datum));
+  });
+  renderAgendaStats();
+}
+function computeCycleStats(cyclesInput){
+  // standaard: alleen afgeronde cycli uit DATA (niet de laatste/lopende)
+  // als cyclesInput is meegegeven (bv. voorbeeld), gebruik die allemaal
+  let afgerond;
+  if(cyclesInput){ afgerond = cyclesInput; }
+  else { const cycles=DATA.cycles; afgerond = cycles.slice(0, Math.max(0, cycles.length-1)); }
+  const lengths=[], bleedLengths=[], fertileCounts=[];
+  for(const c of afgerond){
+    if(c.days.length>0) lengths.push(c.days.length);
+    let bl=0;
+    for(const d of c.days){ if(d.bloeding){ bl++; } else break; }
+    if(bl>0) bleedLengths.push(bl);
+    const start=computeCycleStartInfertile(c), end=computeInfertileAfterOvulation(c);
+    let fc=0;
+    c.days.forEach((d,i)=>{ const f=dayFertility(i,start,end,d); if(f==='v'||f==='v/') fc++; });
+    if(fc>0) fertileCounts.push(fc);
+  }
+  const avg=arr=>arr.length? Math.round(arr.reduce((a,b)=>a+b,0)/arr.length) : null;
+  return {
+    count: afgerond.length,
+    avgLength: avg(lengths),
+    minLength: lengths.length? Math.min(...lengths):null,
+    maxLength: lengths.length? Math.max(...lengths):null,
+    avgBleed: avg(bleedLengths),
+    avgFertile: avg(fertileCounts)
+  };
+}
+function statsBoxHtml(s){
+  const stat=(icon,val,lbl,sub)=>`<div style="flex:1; min-width:90px; text-align:center; padding:12px 8px;
+    background:var(--input-bg); border-radius:14px;">
+    <div style="font-size:1.3rem;">${icon}</div>
+    <div style="font-size:1.4rem; font-weight:700; color:var(--plum-dark); font-family:'Fraunces',serif;">${val??'—'}</div>
+    <div style="font-size:0.72rem; color:var(--text-soft); line-height:1.3;">${lbl}${sub?`<br><span style="opacity:0.7;">${sub}</span>`:''}</div>
+  </div>`;
+  return `
+    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+      ${stat('📅', s.avgLength, 'gem. cycluslengte', s.minLength&&s.maxLength?`${s.minLength}–${s.maxLength} dagen`:'')}
+      ${stat('🩸', s.avgBleed, 'gem. bloedingsduur', 'dagen')}
+      ${stat('🌸', s.avgFertile, 'gem. vruchtbare dagen', 'per cyclus')}
+    </div>
+    <p class="muted" style="font-size:0.72rem; margin-top:10px; text-align:center;">
+      Gebaseerd op ${s.count} afgeronde ${s.count===1?'cyclus':'cycli'}.</p>`;
+}
+function renderAgendaStats(){
+  const box=document.getElementById('agendaStatsBox');
+  if(!box) return;
+  const s=computeCycleStats();
+  if(s.count===0){
+    box.innerHTML='<p class="muted" style="text-align:center;">Nog geen afgeronde cycli. Zodra je een cyclus afsluit, verschijnen hier je gemiddelden.</p>';
+    return;
+  }
+  box.innerHTML=statsBoxHtml(s);
+}
+function agendaShiftMonth(delta){
+  if(!_agendaMaand){ const t=new Date(); _agendaMaand={y:t.getFullYear(),mo:t.getMonth()}; }
+  let mo=_agendaMaand.mo+delta, y=_agendaMaand.y;
+  while(mo<0){ mo+=12; y--; } while(mo>11){ mo-=12; y++; }
+  _agendaMaand={y,mo};
+  renderAgenda();
+}
+document.getElementById('agendaPrev').addEventListener('click',()=>agendaShiftMonth(-1));
+document.getElementById('agendaNext').addEventListener('click',()=>agendaShiftMonth(1));
+document.getElementById('agendaToday').addEventListener('click',()=>{
+  const t=new Date(); _agendaMaand={y:t.getFullYear(),mo:t.getMonth()}; renderAgenda();
+});
+
+/* ---- Gemeenschap-popup ---- */
+let _sexPopupDate=null;
+function openSexPopup(iso){
+  _sexPopupDate=iso;
+  const d=new Date(iso+'T00:00:00');
+  document.getElementById('sexPopupDate').textContent=
+    d.toLocaleDateString('nl-NL',{weekday:'long',day:'numeric',month:'long'});
+  // Ja/Nee-knoppen kleuren op basis van huidige staat
+  const has=(window._sexDays&&window._sexDays.has(iso));
+  document.getElementById('sexPopup').style.display='flex';
+}
+async function setSexForDate(iso, value){
+  // zoek de dag in de cycli; zit hij er al?
+  let found=null, foundCycle=null;
+  for(const c of DATA.cycles){
+    const d=c.days.find(x=>x.date===iso);
+    if(d){ found=d; foundCycle=c; break; }
+  }
+  if(found){
+    // pas het extra-veld aan
+    let extras=new Set((found.extra||'').split(',').filter(Boolean));
+    if(value) extras.add('X'); else extras.delete('X');
+    found.extra=[...extras].join(',');
+  } else if(value){
+    // dag bestaat nog niet → voeg een minimale dag toe aan de huidige cyclus
+    const c=huidigeCyclus();
+    c.days.push({ date:iso, temp:null, meettijd:null, gestoord:false, bloeding:'',
+      cervixAfk:null, uiterlijk:'', bmOpening:null, bmStevigheid:null, extra:'X', note:'' });
+    c.days.sort((a,b)=>a.date<b.date?-1:1); // op datum sorteren
+  }
+  await saveData();
+  document.getElementById('sexPopup').style.display='none';
+  renderAgenda();
+}
+document.getElementById('sexYes').addEventListener('click',()=>setSexForDate(_sexPopupDate,true));
+document.getElementById('sexNo').addEventListener('click',()=>setSexForDate(_sexPopupDate,false));
+document.getElementById('sexCancel').addEventListener('click',()=>{
+  document.getElementById('sexPopup').style.display='none';
+});
+document.getElementById('sexPopup').addEventListener('click',(e)=>{
+  if(e.target===document.getElementById('sexPopup'))
+    document.getElementById('sexPopup').style.display='none';
+});
+
+/* ---- PDF-export van de kaart ---- */
+function drawExportCanvas(cycle){
+  const days=cycle.days;
+  const n=Math.max(days.length,10);
+  const rise=computeTempRise(cycle);
+  const peak=computePeakDay(cycle);
+  const start=computeCycleStartInfertile(cycle);
+  const end=computeInfertileAfterOvulation(cycle);
+  const dayW=34, labelW=110, chartH=240;
+  const rowDefs=[
+    {key:'piek', label:'Piekdag P·1·2·3', h:22},
+    {key:'safk', label:'S-afkorting', h:22},
+    {key:'dagnr', label:'Cyclusdag', h:22},
+    {key:'datum', label:'Datum', h:22},
+    {key:'meettijd', label:'Meettijd', h:22},
+    {key:'bloeding', label:'Bloeding', h:22},
+    {key:'ervaren', label:'Slijm ervaren/voelen', h:90},
+    {key:'uiterlijk', label:'Slijm uiterlijk', h:90},
+    {key:'bmh', label:'Baarmoederhals', h:22},
+    {key:'extra', label:'O / B / X', h:22},
+    {key:'vrucht', label:'Vruchtbare dagen', h:22}
+  ];
+  const tableH=rowDefs.reduce((a,r)=>a+r.h,0);
+  const headerH=46;
+  const W=labelW+n*dayW+20, H=headerH+chartH+tableH+20;
+  const SC=2; // scherpte
+  const cv=document.createElement('canvas');
+  cv.width=W*SC; cv.height=H*SC;
+  const ctx=cv.getContext('2d');
+  ctx.setTransform(SC,0,0,SC,0,0);
+  ctx.fillStyle='#ffffff'; ctx.fillRect(0,0,W,H);
+
+  // titel
+  ctx.fillStyle='#5B3A4B'; ctx.font='bold 15px Georgia';
+  ctx.fillText(`Cycluskaart — cyclus ${cycle.nummer}  (start ${fmtDateLong(cycle.startDate)})`, 12, 22);
+  ctx.font='10px sans-serif'; ctx.fillStyle='#6b5b64';
+  let sub=[];
+  if(rise) sub.push(`stijging bevestigd dag ${rise.closedAt+1}, hulplijn ${rise.hulplijn.toFixed(2)}°C`);
+  if(peak) sub.push(`piekdag dag ${peak.index+1}`);
+  if(end.combined!==null) sub.push(`onvruchtbaar vanaf avond dag ${end.combined+1}`);
+  ctx.fillText(sub.join('  ·  ')||'nog geen afgesloten interpretatie', 12, 38);
+
+  // temperatuurgrafiek
+  const tMin=35.9, tMax=37.6, gTop=headerH+6, gBottom=headerH+chartH-16;
+  const yFor=t=>gTop+(tMax-t)/(tMax-tMin)*(gBottom-gTop);
+  const xFor=i=>labelW+i*dayW+dayW/2;
+  for(let t=36.0;t<=37.5+0.001;t+=0.1){
+    const y=yFor(t), major=(Math.round(t*10)%5===0);
+    ctx.strokeStyle=major?'#C9B8AE':'#EDE2DB'; ctx.beginPath();
+    ctx.moveTo(labelW,y); ctx.lineTo(W-10,y); ctx.stroke();
+    ctx.fillStyle=major?'#5B3A4B':'#9a8a92';
+    ctx.font=major?'bold 9px sans-serif':'8px sans-serif';
+    ctx.fillText(t.toFixed(1), labelW-32, y+3);
+  }
+  for(let i=0;i<=n;i++){ ctx.strokeStyle='#EDE2DB'; ctx.beginPath();
+    ctx.moveTo(labelW+i*dayW,gTop); ctx.lineTo(labelW+i*dayW,gBottom); ctx.stroke(); }
+  if(rise){ const y=yFor(rise.hulplijn); ctx.strokeStyle='#C97B84'; ctx.setLineDash([5,4]);
+    ctx.beginPath(); ctx.moveTo(labelW,y); ctx.lineTo(W-10,y); ctx.stroke(); ctx.setLineDash([]); }
+  ctx.strokeStyle='#5B3A4B'; ctx.lineWidth=1.6; ctx.beginPath(); let st2=false;
+  days.forEach((d,i)=>{ if(!d.temp){st2=false;return;} const x=xFor(i),y=yFor(parseFloat(d.temp));
+    if(!st2){ctx.moveTo(x,y);st2=true;} else ctx.lineTo(x,y); });
+  ctx.stroke();
+  days.forEach((d,i)=>{ if(!d.temp) return; const t=parseFloat(d.temp),x=xFor(i),y=yFor(t);
+    if(d.gestoord){ ctx.beginPath(); ctx.arc(x,y,3.4,0,7); ctx.strokeStyle='#B8860B'; ctx.lineWidth=1.3;
+      ctx.stroke(); ctx.fillStyle='#fff'; ctx.fill(); ctx.strokeStyle='#5B3A4B'; ctx.lineWidth=1.6; return; }
+    const isR=rise&&rise.riseIdx.includes(i);
+    ctx.beginPath(); ctx.arc(x,y,3,0,7); ctx.fillStyle=isR?'#C97B84':'#5B3A4B'; ctx.fill();
+    if(isR){ ctx.fillStyle='#C97B84'; ctx.font='10px sans-serif'; ctx.textAlign='center';
+      ctx.fillText('▲',x,y-7); ctx.textAlign='left'; } });
+  if(rise){ ctx.fillStyle='#6b5b64'; ctx.font='8px sans-serif'; ctx.textAlign='center';
+    rise.lowIdx.forEach((idx,j)=>ctx.fillText(String(6-j),xFor(idx),gBottom+11)); ctx.textAlign='left'; }
+
+  // tabel
+  let y0=headerH+chartH;
+  for(const row of rowDefs){
+    ctx.strokeStyle='#D8CCC5'; ctx.strokeRect(10,y0,labelW-10,row.h);
+    ctx.fillStyle='#F7EFEA'; ctx.fillRect(10.5,y0+0.5,labelW-11,row.h-1);
+    ctx.fillStyle='#6b5b64'; ctx.font='8.5px sans-serif';
+    ctx.fillText(row.label, 14, y0+row.h/2+3);
+    for(let i=0;i<n;i++){
+      const x=labelW+i*dayW;
+      ctx.strokeStyle='#EDE2DB'; ctx.strokeRect(x,y0,dayW,row.h);
+      const d=days[i]; if(!d) continue;
+      ctx.fillStyle='#2E2430'; ctx.font='9px sans-serif'; ctx.textAlign='center';
+      const cx=x+dayW/2, cy=y0+row.h/2+3;
+      switch(row.key){
+        case 'piek':
+          if(peak && i===peak.index){ ctx.fillStyle='#C97B84'; ctx.font='bold 10px sans-serif'; ctx.fillText('P',cx,cy); }
+          else if(peak && i>peak.index && i<=peak.index+3){ ctx.fillStyle='#C97B84'; ctx.fillText(String(i-peak.index),cx,cy); }
+          break;
+        case 'safk': if(d.cervixAfk) ctx.fillText(d.cervixAfk,cx,cy); break;
+        case 'dagnr': ctx.fillText(String(i+1),cx,cy); break;
+        case 'datum': ctx.font='7.5px sans-serif'; ctx.fillText(fmtDate(d.date),cx,cy); break;
+        case 'meettijd': if(d.meettijd){ ctx.font='7.5px sans-serif'; ctx.fillText(d.meettijd,cx,cy); } break;
+        case 'bloeding':
+          if(d.bloeding){ ctx.fillStyle='#C05C6B';
+            ctx.fillRect(x+3,y0+5,dayW-6,row.h-10); }
+          break;
+        case 'ervaren':
+          { const et=ervarenText(d);
+            if(et){ ctx.save(); ctx.translate(cx+3,y0+row.h-4); ctx.rotate(-Math.PI/2);
+              ctx.font='7.5px sans-serif'; ctx.textAlign='left'; ctx.fillStyle='#2E2430';
+              ctx.fillText(et.slice(0,20),0,0); ctx.restore(); } }
+          break;
+        case 'uiterlijk':
+          { const ut=uiterlijkText(d);
+            if(ut){ ctx.save(); ctx.translate(cx+3,y0+row.h-4); ctx.rotate(-Math.PI/2);
+              ctx.font='7.5px sans-serif'; ctx.textAlign='left'; ctx.fillStyle='#2E2430';
+              ctx.fillText(ut.slice(0,20),0,0); ctx.restore(); } }
+          break;
+        case 'bmh':
+          if(d.bmOpening){ const sym=d.bmOpening==='gesloten'?'●':(d.bmOpening==='deels'?'○':'◯');
+            ctx.fillText(sym+(d.bmStevigheid?(d.bmStevigheid==='hard'?'h':'z'):''),cx,cy); }
+          break;
+        case 'extra': if(d.extra) ctx.fillText(d.extra.replaceAll(',',' '),cx,cy); break;
+        case 'vrucht': { const f=dayFertility(i,start,end,d);
+          if(f){ ctx.fillStyle='#B85C5C'; ctx.font='bold 9px sans-serif'; ctx.fillText(f,cx,cy); } }
+          break;
+      }
+      ctx.textAlign='left';
+    }
+    y0+=row.h;
+  }
+  return cv;
+}
+function makeCyclePdfBase64(cycle){
+  const cv=drawExportCanvas(cycle);
+  const img=cv.toDataURL('image/png');
+  const { jsPDF } = window.jspdf;
+  const pdf=new jsPDF({ orientation:'landscape', unit:'mm', format:'a4' });
+  const pw=pdf.internal.pageSize.getWidth()-16, ph=pdf.internal.pageSize.getHeight()-16;
+  const ratio=cv.height/cv.width;
+  let w=pw, h=pw*ratio;
+  if(h>ph){ h=ph; w=ph/ratio; }
+  pdf.addImage(img,'PNG',8,8,w,h);
+  const b64=pdf.output('datauristring').split(',')[1];
+  return b64;
+}
+
+/* ---- Cyclus mailen ---- */
+function buildCycleText(cycle){
+  const end=computeInfertileAfterOvulation(cycle);
+  const peak=computePeakDay(cycle);
+  const rise=computeTempRise(cycle);
+  let lines=[];
+  lines.push(`Cycluskaart — cyclus ${cycle.nummer}`);
+  lines.push(`Start: ${fmtDateLong(cycle.startDate)}`);
+  lines.push(`Aantal dagen ingevoerd: ${cycle.days.length}`);
+  lines.push('');
+  if(rise) lines.push(`Temperatuurstijging bevestigd op dag ${rise.riseIdx[2]+1} (hulplijn ${rise.hulplijn.toFixed(2)} graden).`);
+  if(peak) lines.push(`Cervixslijmpiekdag: dag ${peak.index+1}.`);
+  if(end.combined!==null) lines.push(`Einde vruchtbare periode: avond van dag ${end.combined+1}.`);
+  lines.push('');
+  lines.push('Dag | Datum | Temp | Slijm | BMH | Bloeding | Gem.');
+  cycle.days.forEach((d,i)=>{
+    const bmh=d.bmOpening? (d.bmOpening[0]+'/'+(d.bmStevigheid||'?')) : '-';
+    lines.push([
+      i+1, fmtDate(d.date),
+      d.temp? (d.temp+(d.gestoord?'*':'')) : '-',
+      d.cervixAfk||'-',
+      bmh,
+      d.bloeding||'-',
+      d.extra&&d.extra.includes('X')?'X':'-'
+    ].join(' | '));
+  });
+  lines.push('');
+  lines.push('* = gestoorde meting (telt niet mee)');
+  lines.push('Verstuurd vanuit de Cyclus-app.');
+  return lines.join('\n');
+}
+async function sendCycleMail(cycle, silent){
+  if(!sb || !currentUser){ if(!silent) alert('Je moet ingelogd zijn om te mailen.'); return false; }
+  const subject=`Cycluskaart cyclus ${cycle.nummer} (start ${fmtDate(cycle.startDate)})`;
+  const text=`In de bijlage vind je de ingevulde cycluskaart van cyclus ${cycle.nummer} als PDF.\n\nVerstuurd vanuit de Cyclus-app.`;
+  const to=currentUser.email;
+  let pdfBase64=null;
+  try{ pdfBase64=makeCyclePdfBase64(cycle); }
+  catch(e){ console.warn('PDF maken mislukt, val terug op tekst', e); }
+  const body={ to, subject, text };
+  if(pdfBase64){
+    body.attachment={ filename:`cycluskaart-${cycle.nummer}.pdf`, content:pdfBase64 };
+  } else {
+    body.text = buildCycleText(cycle); // terugval: tekstversie
+  }
+  try{
+    const { data, error } = await sb.functions.invoke('mail-cyclus', { body });
+    if(error) throw error;
+    if(data && data.error) throw new Error(JSON.stringify(data.error));
+    return true;
+  }catch(e){
+    if(!silent) alert('Mailen mislukt: '+(e.message||e)+'\n\nControleer of het domein in Resend geverifieerd is.');
+    return false;
+  }
+}
+/* ---- Demo data ---- */
+function makeDemoCycle(nummer, startISO){
+  // realistische ~29-daagse cyclus met stijging rond dag 16-17 en piekdag dag 15
+  const t=[  // temperaturen per cyclusdag (null = niet gemeten)
+    36.55,36.60,36.45,36.55,36.50,36.48,36.52,36.45,36.42,36.40,
+    36.44,36.38,36.42,36.40,36.45,36.55,36.72,36.78,36.80,36.82,
+    36.79,36.85,36.83,36.88,36.80,36.84,36.78,36.55,36.50];
+  const slijm=[ // afkortingen; menstruatie eerste dagen geen slijm
+    null,null,null,null,'d','d','Ø','v','v','S','S','S','S+','S+','S+',
+    'S','v','Ø','d','d','d','d','d','d','d','d','d','d','d'];
+  const uiterlijk=[
+    '','','','','','','','','kleverig','wit troebel','wit troebel','romig',
+    'helder rekbaar','helder, rekbaar','helder rekbaar','kleverig wit','','','','','','','','','','','','',''];
+  const ervaren_demo=[
+    null,null,null,null,'droog','droog','niets','vochtig','vochtig','vochtig','vochtig','vochtig','nat','nat','nat',
+    'vochtig','vochtig','niets','droog','droog','droog','droog','droog','droog','droog','droog','droog','droog','droog'];
+  const uiterlijkSel_demo=[
+    null,null,null,null,'niets','niets','niets','niets','kleverig','dik','dik','dik','helder','eiwit','helder',
+    'kleverig','niets','niets','niets','niets','niets','niets','niets','niets','niets','niets','niets','niets','niets'];
+  const gemoedstand_demo=[
+    'moe','moe','prikkel','neutraal','neutraal','blij','blij','energiek','energiek','romantisch','blij','blij',
+    'energiek','romantisch','gevoelig','neutraal','moe','neutraal','blij','blij','neutraal','neutraal','blij',
+    'energiek','neutraal','neutraal','neutraal','moe','prikkel'];
+  const bloeding=['sterk','sterk','normaal','normaal','licht',...Array(24).fill('')];
+  const gemeenschap=[false,false,false,false,false,false,true,false,true,false,true,false,true,false,true,false,false,true,false,true,false,false,true,false,false,false,false,false,false];
+  const gestoord=Array(29).fill(false); gestoord[9]=true; // 1 gestoorde meting als voorbeeld
+  const days=[];
+  for(let i=0;i<29;i++){
+    days.push({
+      date:addDays(startISO,i),
+      temp: t[i]!=null? t[i].toFixed(2):null,
+      meettijd:'07:00',
+      gestoord:gestoord[i],
+      bloeding:bloeding[i]||'',
+      cervixAfk:slijm[i]||null,
+      ervaren:ervaren_demo[i]||null,
+      uiterlijkSel:uiterlijkSel_demo[i]||null,
+      uiterlijk:uiterlijk[i]||'',
+      bmOpening: (i>=10&&i<=16)?'deels':'gesloten',
+      bmStevigheid: (i>=10&&i<=16)?'zacht':'hard',
+      extra: i===15?'O':'' ,
+      gemoedstand: gemoedstand_demo[i]||'',
+      note: gestoord[i]?'gebroken nacht':''
+    });
+  }
+  return { id:'demo'+nummer+'_'+Date.now(), nummer, startDate:startISO, days };
+}
+/* ---- Voorbeeldpagina (los van eigen data, raakt DATA nooit aan) ---- */
+function interpretatieHtml(demo){
+  const start=computeCycleStartInfertile(demo);
+  const end=computeInfertileAfterOvulation(demo);
+  let h='';
+  h+=`<p style="margin:4px 0;"><b>Begin cyclus:</b> ${start.rule} — ${start.note? start.note : 'onvruchtbaar t/m dag '+start.lastSafeDay+'.'}</p>`;
+  if(end.rise) h+=`<p style="margin:4px 0;"><b>Temperatuurstijging:</b> bevestigd op dag ${end.rise.closedAt+1}${end.rise.exception1?' (uitz.regel 1)':''}. Hulplijn ${end.rise.hulplijn.toFixed(2)}°C.</p>`;
+  if(end.peak) h+=`<p style="margin:4px 0;"><b>Piekdag:</b> dag ${end.peak.index+1} → P+3 = avond dag ${end.peak.index+4}.</p>`;
+  if(end.combined!==null)
+    h+=`<p style="margin:6px 0;"><b style="color:var(--sage-dark);">Onvruchtbaar vanaf avond dag ${end.combined+1}</b> (${end.basis}).</p>`;
+  return h;
+}
+function buildVoorbeeldAgenda(cycli){
+  // bouw een status-map alleen uit de demo-cycli (raakt DATA niet aan)
+  const map={}; const sexDays=new Set();
+  for(const c of cycli){
+    const start=computeCycleStartInfertile(c);
+    const end=computeInfertileAfterOvulation(c);
+    c.days.forEach((d,i)=>{
+      if(d.extra && d.extra.includes('X')) sexDays.add(d.date);
+      let st='onvrucht';
+      const f=dayFertility(i,start,end,d);
+      if(f==='v'||f==='v/') st='vrucht';
+      if(d.bloeding) st='bloeding';
+      map[d.date]=st;
+    });
+  }
+  // toon de maand(en) waarin de demo valt
+  const dates=Object.keys(map).sort();
+  if(dates.length===0) return '';
+  const first=new Date(dates[0]+'T00:00:00');
+  const last=new Date(dates[dates.length-1]+'T00:00:00');
+  const months=[];
+  let cur=new Date(first.getFullYear(), first.getMonth(), 1);
+  const endM=new Date(last.getFullYear(), last.getMonth(), 1);
+  while(cur<=endM){ months.push(new Date(cur)); cur.setMonth(cur.getMonth()+1); }
+  const dows=['ma','di','wo','do','vr','za','zo'];
+  let html='';
+  for(const m of months){
+    const y=m.getFullYear(), mo=m.getMonth();
+    const monthName=m.toLocaleDateString('nl-NL',{month:'long',year:'numeric'});
+    const firstDow=(new Date(y,mo,1).getDay()+6)%7;
+    const daysInMonth=new Date(y,mo+1,0).getDate();
+    html+=`<div class="month-block"><div class="month-title">${monthName.charAt(0).toUpperCase()+monthName.slice(1)}</div><div class="month-grid">`;
+    html+=dows.map(d=>`<div class="dow">${d}</div>`).join('');
+    for(let i=0;i<firstDow;i++) html+=`<div class="mday empty"></div>`;
+    for(let d=1;d<=daysInMonth;d++){
+      const iso=`${y}-${String(mo+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      const st=map[iso]||'';
+      const sexMark=sexDays.has(iso)?`<span class="sex-dot">♥</span>`:'';
+      html+=`<div class="mday ${st}">${d}${sexMark}</div>`;
+    }
+    html+=`</div></div>`;
+  }
+  return html;
+}
+function renderVoorbeeld(){
+  const demo1 = makeDemoCycle(1, '2026-05-01');
+  const demo2 = makeDemoCycle(2, addDays('2026-05-01',29));
+  demo2.days = demo2.days.slice(0,20); // tweede cyclus loopt nog
+
+  document.getElementById('voorbeeldTitle').textContent =
+    `Cycluskaart 1 — voorbeeld (start ${fmtDate(demo1.startDate)})`;
+  document.getElementById('voorbeeldInterpretationBox').innerHTML = interpretatieHtml(demo1);
+  buildKaartInto('voorbeeldKaartOuter', demo1);
+
+  document.getElementById('voorbeeldTitle2').textContent =
+    `Cycluskaart 2 — voorbeeld (start ${fmtDate(demo2.startDate)})`;
+  document.getElementById('voorbeeldInterpretationBox2').innerHTML = interpretatieHtml(demo2);
+  buildKaartInto('voorbeeldKaartOuter2', demo2);
+
+  document.getElementById('voorbeeldAgenda').innerHTML = buildVoorbeeldAgenda([demo1, demo2]);
+
+  // overzicht-voorbeeld: behandel demo1 als afgerond (volledig), demo2 loopt
+  const statsBox=document.getElementById('voorbeeldStatsBox');
+  if(statsBox){
+    const s=computeCycleStats([demo1]); // afgeronde voorbeeldcyclus
+    statsBox.innerHTML=statsBoxHtml(s);
+  }
+}
+document.getElementById('showVoorbeeldBtn').addEventListener('click', ()=>{
+  document.querySelectorAll('main section').forEach(s=>s.classList.remove('active'));
+  document.getElementById('tab-voorbeeld').classList.add('active');
+  renderVoorbeeld();
+});
+document.getElementById('backToInfoBtn').addEventListener('click', ()=>goTab('info'));
+
+/* ---- Authenticatie ---- */
+let authMode = 'login'; // of 'signup'
+const authOverlay = document.getElementById('authOverlay');
+const authMsg = document.getElementById('authMsg');
+
+function setAuthMsg(text, kind){ authMsg.textContent=text; authMsg.className='auth-msg'+(kind?' '+kind:''); }
+
+function bindAuthToggle(){
+  const t=document.getElementById('authToggle');
+  if(t) t.addEventListener('click', toggleAuthMode);
+}
+function toggleAuthMode(){
+  authMode = authMode==='login' ? 'signup' : 'login';
+  document.getElementById('authSubmit').textContent = authMode==='login' ? 'Inloggen' : 'Account aanmaken';
+  document.getElementById('authSwitch').innerHTML = authMode==='login'
+    ? 'Nog geen account? <a id="authToggle">Account aanmaken</a>'
+    : 'Al een account? <a id="authToggle">Inloggen</a>';
+  bindAuthToggle();
+  setAuthMsg('');
+}
+bindAuthToggle();
+
+document.getElementById('authSubmit').addEventListener('click', async ()=>{
+  const email=document.getElementById('authEmail').value.trim();
+  const pass=document.getElementById('authPass').value;
+  if(!email || !pass){ setAuthMsg('Vul e-mail en wachtwoord in.','err'); return; }
+  if(!sb){ setAuthMsg('Geen verbinding met de server.','err'); return; }
+  setAuthMsg('Even geduld…');
+  try{
+    if(authMode==='signup'){
+      const { data, error } = await sb.auth.signUp({ email, password: pass });
+      if(error){ setAuthMsg(vertaalFout(error.message),'err'); return; }
+      if(data.user && !data.session){
+        setAuthMsg('Account aangemaakt! Check je e-mail om te bevestigen, log daarna in.','ok');
+        return;
+      }
+      currentUser = data.user;
+      await startApp();
+    } else {
+      const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
+      if(error){ setAuthMsg(vertaalFout(error.message),'err'); return; }
+      currentUser = data.user;
+      await startApp();
+    }
+  }catch(e){ setAuthMsg('Er ging iets mis. Probeer opnieuw.','err'); }
+});
+
+function vertaalFout(msg){
+  if(/Invalid login/i.test(msg)) return 'E-mail of wachtwoord klopt niet.';
+  if(/already registered/i.test(msg)) return 'Dit e-mailadres heeft al een account. Log in.';
+  if(/at least 6/i.test(msg)) return 'Wachtwoord moet minstens 6 tekens zijn.';
+  if(/Email not confirmed/i.test(msg)) return 'Bevestig eerst je e-mail (check je inbox).';
+  return msg;
+}
+
+document.getElementById('logoutBtn').addEventListener('click', async ()=>{
+  if(sb) await sb.auth.signOut();
+  currentUser = null;
+  authOverlay.classList.remove('hidden');
+  document.getElementById('authEmail').value='';
+  document.getElementById('authPass').value='';
+  setAuthMsg('');
+});
+
+/* ---- App starten na login ---- */
+/* ---- Pincode-beveiliging ---- */
+function pinHash(pin){
+  // simpele hash (geen zware beveiliging, maar houdt de pin uit het zicht)
+  let h=5381; const s='cycluss:'+pin;
+  for(let i=0;i<s.length;i++){ h=((h<<5)+h+s.charCodeAt(i))>>>0; }
+  return String(h);
+}
+function getPinHash(){ return localStorage.getItem('cyclus_pin'); }
+function setPin(pin){ if(pin) localStorage.setItem('cyclus_pin', pinHash(pin)); else localStorage.removeItem('cyclus_pin'); }
+function hasPinSet(){ return !!getPinHash(); }
+
+let _pinBuffer='';
+let _pinMode='unlock'; // 'unlock' | 'set-new' | 'set-confirm'
+let _pinFirstEntry='';
+let _pinOnSuccess=null;
+
+function updatePinDots(){
+  document.querySelectorAll('#pinDots .pindot').forEach((dot,i)=>{
+    dot.classList.toggle('filled', i<_pinBuffer.length);
+  });
+}
+function openPinUnlock(onSuccess){
+  _pinMode='unlock'; _pinBuffer=''; _pinOnSuccess=onSuccess;
+  document.getElementById('pinTitle').textContent='Voer je pincode in';
+  document.getElementById('pinSub').textContent='Cycluss is beveiligd met een pincode.';
+  document.getElementById('pinError').textContent='';
+  document.getElementById('pinForgot').style.display=''; // vergeten-knop tonen
+  updatePinDots();
+  document.getElementById('pinOverlay').style.display='flex';
+}
+function openPinSet(){
+  _pinMode='set-new'; _pinBuffer=''; _pinFirstEntry='';
+  document.getElementById('pinTitle').textContent='Kies een nieuwe pincode';
+  document.getElementById('pinSub').textContent='Voer 4 cijfers in.';
+  document.getElementById('pinError').textContent='';
+  document.getElementById('pinForgot').style.display='none'; // niet bij instellen
+  updatePinDots();
+  document.getElementById('pinOverlay').style.display='flex';
+}
+function pinAddDigit(n){
+  if(_pinBuffer.length>=4) return;
+  _pinBuffer+=n; updatePinDots();
+  if(_pinBuffer.length===4) setTimeout(pinComplete, 150);
+}
+function pinDelete(){ _pinBuffer=_pinBuffer.slice(0,-1); updatePinDots(); }
+function pinComplete(){
+  const err=document.getElementById('pinError');
+  if(_pinMode==='unlock'){
+    if(pinHash(_pinBuffer)===getPinHash()){
+      document.getElementById('pinOverlay').style.display='none';
+      if(_pinOnSuccess) _pinOnSuccess();
+    } else {
+      err.textContent='Onjuiste pincode. Probeer opnieuw.';
+      _pinBuffer=''; updatePinDots();
+    }
+  } else if(_pinMode==='set-new'){
+    _pinFirstEntry=_pinBuffer; _pinBuffer=''; _pinMode='set-confirm';
+    document.getElementById('pinTitle').textContent='Bevestig je pincode';
+    document.getElementById('pinSub').textContent='Voer dezelfde 4 cijfers nog eens in.';
+    updatePinDots();
+  } else if(_pinMode==='set-confirm'){
+    if(_pinBuffer===_pinFirstEntry){
+      setPin(_pinBuffer);
+      document.getElementById('pinOverlay').style.display='none';
+      alert('Pincode ingesteld.');
+    } else {
+      err.textContent='De codes komen niet overeen. Opnieuw.';
+      _pinBuffer=''; _pinFirstEntry=''; _pinMode='set-new';
+      document.getElementById('pinTitle').textContent='Kies een nieuwe pincode';
+      document.getElementById('pinSub').textContent='Voer 4 cijfers in.';
+      updatePinDots();
+    }
+  }
+}
+document.querySelectorAll('.pinkey').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    if(btn.dataset.del) pinDelete();
+    else pinAddDigit(btn.dataset.n);
+  });
+});
+document.getElementById('pinForgot').addEventListener('click', ()=>{
+  if(!confirm('Pincode wissen? Je gegevens blijven gewoon bewaard. Je kunt daarna in de instellingen een nieuwe pincode kiezen.')) return;
+  setPin(null);
+  document.getElementById('pinOverlay').style.display='none';
+  if(_pinOnSuccess) _pinOnSuccess();
+});
+
+async function startApp(){
+  // 1. Data eerst laden (nodig voor het ochtendscherm), overlay blijft nog even
+  authOverlay.classList.add('hidden');
+  await loadData();
+
+  // 2. Ochtendscherm vóór de pincode (max gemak bij wazig wakker worden)
+  const cycle=huidigeCyclus();
+  const vandaagDag = cycle && cycle.days.find(d => d.date === todayISO());
+  const heeftTemp = vandaagDag && vandaagDag.temp;
+
+  const naOchtend = ()=>{
+    // 3. Pincode ná het ochtendscherm (als ingesteld)
+    if(hasPinSet()){
+      openPinUnlock(()=>{ revealApp(); });
+    } else {
+      revealApp();
+    }
+  };
+
+  if(!heeftTemp){
+    // toon ochtendscherm; na opslaan/overslaan volgt de pincode
+    showOchtendPopup(naOchtend);
+  } else {
+    naOchtend();
+  }
+}
+function revealApp(){
+  renderVandaag();
+  goTab('vandaag');
+  scheduleDailyReminder();
+}
+
+/* ---- Snel ochtend-temperatuurscherm ---- */
+let _ochtendCallback=null;
+function showOchtendPopup(onDone){
+  _ochtendCallback = onDone || null;
+  const now=new Date();
+  const hh=String(now.getHours()).padStart(2,'0'), mm=String(now.getMinutes()).padStart(2,'0');
+  document.getElementById('ochtendTijd').textContent=`${hh}:${mm}`;
+  document.getElementById('ochtendGroet').textContent=greetingText();
+  document.getElementById('ochtendTemp').value='';
+  window._ochtendGestoord=false;
+  const gb=document.getElementById('ochtendGestoord');
+  gb.style.background='transparent'; gb.textContent='⚠️ Meting was gestoord (gebroken nacht, laat...)';
+  document.getElementById('ochtendPopup').style.display='flex';
+  setTimeout(()=>document.getElementById('ochtendTemp').focus(), 200);
+}
+function closeOchtend(){
+  document.getElementById('ochtendPopup').style.display='none';
+  const cb=_ochtendCallback; _ochtendCallback=null;
+  if(cb) cb();
+  else { renderVandaag(); goTab('vandaag'); } // losse aanroep (niet vanuit opstart)
+}
+async function saveOchtendTemp(){
+  const temp=document.getElementById('ochtendTemp').value.trim();
+  if(!temp){ closeOchtend(); return; }
+  const now=new Date();
+  const meettijd=`${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+  const cycle=huidigeCyclus();
+  const today=todayISO();
+  let dag=cycle.days.find(d=>d.date===today);
+  if(dag){
+    dag.temp=temp; dag.meettijd=meettijd; dag.gestoord=!!window._ochtendGestoord;
+  } else {
+    cycle.days.push({ date:today, temp, meettijd, gestoord:!!window._ochtendGestoord,
+      bloeding:'', cervixAfk:null, uiterlijk:'', bmOpening:null, bmStevigheid:null,
+      extra:'', gemoedstand:'', note:'' });
+    cycle.days.sort((a,b)=>a.date<b.date?-1:1);
+  }
+  await saveData();
+  closeOchtend();
+}
+document.getElementById('ochtendOpslaan').addEventListener('click', saveOchtendTemp);
+document.getElementById('ochtendGestoord').addEventListener('click', ()=>{
+  window._ochtendGestoord=!window._ochtendGestoord;
+  const gb=document.getElementById('ochtendGestoord');
+  if(window._ochtendGestoord){
+    gb.style.background='rgba(255,255,255,0.25)'; gb.textContent='✓ Gemarkeerd als gestoord';
+  } else {
+    gb.style.background='transparent'; gb.textContent='⚠️ Meting was gestoord (gebroken nacht, laat...)';
+  }
+});
+document.getElementById('ochtendLater').addEventListener('click', ()=>{ closeOchtend(); });
+document.getElementById('ochtendTemp').addEventListener('keydown',(e)=>{
+  if(e.key==='Enter') saveOchtendTemp();
+});
+
+
+/* ---- Dagelijkse herinnering ---- */
+function getReminderTime(){
+  return localStorage.getItem('cyclus_reminder_time') || '07:00';
+}
+function setReminderTime(t){
+  localStorage.setItem('cyclus_reminder_time', t);
+}
+function getReminderEnabled(){
+  return localStorage.getItem('cyclus_reminder_on') === '1';
+}
+function setReminderEnabled(v){
+  localStorage.setItem('cyclus_reminder_on', v ? '1' : '0');
+}
+
+async function requestNotificationPermission(){
+  if(!('Notification' in window)) return false;
+  if(Notification.permission === 'granted') return true;
+  if(Notification.permission === 'denied') return false;
+  const result = await Notification.requestPermission();
+  return result === 'granted';
+}
+
+/* ---- Meldingen via service worker ---- */
+async function showAppNotification(title, body){
+  if(!('Notification' in window) || Notification.permission!=='granted') return false;
+  try{
+    if('serviceWorker' in navigator){
+      const reg = await navigator.serviceWorker.getRegistration() || await navigator.serviceWorker.ready;
+      if(reg && reg.showNotification){
+        await reg.showNotification(title, {
+          body,
+          icon:'data:image/svg+xml;base64,'+btoa('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="110" fill="#5B3A4B"/><g transform="translate(256,256)"><circle r="58" fill="#C97B84"/><circle r="34" fill="#FBF6F1"/></g></svg>')
+        });
+        return true;
+      }
+    }
+    new Notification(title, { body });
+    return true;
+  }catch(e){ console.warn('Melding faalde', e); return false; }
+}
+
+function scheduleDailyReminder(){
+  // Verwijder eerdere timeout
+  if(window._reminderTimeout) clearTimeout(window._reminderTimeout);
+  if(!getReminderEnabled()) return;
+  if(!('Notification' in window)) return;
+  if(Notification.permission !== 'granted') return;
+
+  const now = new Date();
+  const [h, m] = getReminderTime().split(':').map(Number);
+  const next = new Date(now);
+  next.setHours(h, m, 0, 0);
+  if(next <= now) next.setDate(next.getDate() + 1); // morgen als tijd al voorbij is
+  const ms = next - now;
+
+  window._reminderTimeout = setTimeout(async ()=>{
+    // Alleen melden als vandaag nog niet ingevuld
+    const cycle = huidigeCyclus();
+    const vandaagAl = cycle && cycle.days.some(d => d.date === todayISO());
+    if(!vandaagAl){
+      await showAppNotification('🌷 Cycluss', 'Vergeet je temperatuur niet te meten!');
+    }
+    // Plan voor morgen opnieuw in
+    scheduleDailyReminder();
+  }, ms);
+}
+
+
+/* ============ Android-app koppeling ============ */
+function markBackupDone(){
+  try{ localStorage.setItem('cyclus_last_backup', todayISO()); }catch(e){}
+  updateLastBackupInfo();
+}
+function updateLastBackupInfo(){
+  const el=document.getElementById('lastBackupInfo'); if(!el) return;
+  let last=null; try{ last=localStorage.getItem('cyclus_last_backup'); }catch(e){}
+  el.textContent = last ? ('Laatste back-up: '+fmtDateLong(last)+'.') : 'Nog geen back-up gemaakt.';
+}
+if(window.Android){
+  // Meldingen via Android in plaats van via de browser
+  requestNotificationPermission = function(){
+    if(Android.notificationsAllowed()) return Promise.resolve(true);
+    return new Promise(resolve=>{
+      window.__notifResult = (ok)=>{ window.__notifResult=null; resolve(!!ok); };
+      Android.requestNotifications();
+    });
+  };
+  scheduleDailyReminder = function(){
+    try{ Android.setReminder(getReminderEnabled(), getReminderTime()); }catch(e){}
+  };
+  const _setEnabled = setReminderEnabled;
+  setReminderEnabled = function(v){ _setEnabled(v); scheduleDailyReminder(); };
+  updateReminderStatus = function(){
+    const el=document.getElementById('setReminderStatus'); if(!el) return;
+    if(!Android.notificationsAllowed() && getReminderEnabled()){
+      el.textContent='Meldingen staan uit voor deze app. Zet ze aan in de telefooninstellingen.'; return;
+    }
+    el.textContent = getReminderEnabled() ? 'Je krijgt elke dag een melding rond de ingestelde tijd.' : '';
+  };
+  // Testknop: oude luisteraar vervangen
+  const oudeTest=document.getElementById('testNotifBtn');
+  const nieuweTest=oudeTest.cloneNode(true);
+  oudeTest.parentNode.replaceChild(nieuweTest, oudeTest);
+  nieuweTest.addEventListener('click', async ()=>{
+    const ok = await requestNotificationPermission();
+    if(!ok){ alert('Meldingen zijn niet toegestaan. Zet ze aan in de instellingen van je telefoon.'); return; }
+    Android.testNotification();
+  });
+  // PDF-kaart delen in plaats van mailen
+  sendCycleMail = async function(cycle, silent){
+    try{
+      const b64 = makeCyclePdfBase64(cycle);
+      Android.shareBase64('cycluskaart-'+cycle.nummer+'.pdf', b64, 'application/pdf');
+      return true;
+    }catch(e){
+      if(!silent) alert('PDF maken mislukt: '+(e.message||e));
+      return false;
+    }
+  };
+  // Instellingen: toon wanneer de laatste back-up was
+  document.getElementById('settingsBtn').addEventListener('click', updateLastBackupInfo);
+  // Herinnering na een maand zonder back-up
+  const _reveal = revealApp;
+  revealApp = function(){
+    _reveal();
+    setTimeout(()=>{
+      if(countDataPoints(DATA) < 7) return;
+      let last=null; try{ last=localStorage.getItem('cyclus_last_backup'); }catch(e){}
+      const dagen = last ? Math.floor((Date.now()-new Date(last+'T00:00:00').getTime())/86400000) : 999;
+      if(dagen < 30) return;
+      if(confirm('Het is al even geleden dat je een back-up hebt gemaakt. Nu een back-up opslaan, bijvoorbeeld op Google Drive?')){
+        Android.shareFile('cyclus-backup-'+todayISO()+'.json', JSON.stringify(DATA,null,2), 'application/json');
+        markBackupDone();
+      } else {
+        // over een week opnieuw vragen
+        try{ localStorage.setItem('cyclus_last_backup', addDays(todayISO(), -23)); }catch(e){}
+      }
+    }, 1500);
+  };
+}
+
+/* ---- Init ---- */
+(async function init(){
+  await loadTheme();
+  if(window.Android){ await startApp(); return; }
+  if(sb){
+    const { data } = await sb.auth.getSession();
+    if(data.session){
+      currentUser = data.session.user;
+      await startApp();
+      return;
+    }
+  }
+  // niet ingelogd → toon inlogscherm (overlay staat al zichtbaar)
+})();
+</script>
+</body>
+</html>
