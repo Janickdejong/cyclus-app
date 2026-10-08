@@ -1847,19 +1847,19 @@ document.getElementById('colInfoPopup').addEventListener('click',(e)=>{
     document.getElementById('colInfoPopup').style.display='none';
 });
 
-/* ---- Begroeting met bijbeltekst (HSV) en fase-uitleg ---- */
+/* ---- Begroeting met bijbeltekst (NBV21) en fase-uitleg ---- */
 const BIJBELTEKSTEN = [
-  {t:"Ik loof U omdat ik ontzagwekkend wonderlijk gemaakt ben; wonderlijk zijn Uw werken, mijn ziel weet dat zeer goed.", r:"Psalm 139:14"},
-  {t:"Alles heeft zijn tijd, en ieder ding onder de hemel heeft zijn uur.", r:"Prediker 3:1"},
-  {t:"De HEERE is mijn Herder, mij ontbreekt niets.", r:"Psalm 23:1"},
-  {t:"Wees in geen ding bezorgd, maar laat uw verlangens in alles, door bidden en smeken, met dankzegging bekend worden bij God.", r:"Filippenzen 4:6"},
-  {t:"Werp al uw zorgen op Hem, want Hij zorgt voor u.", r:"1 Petrus 5:7"},
-  {t:"Zie, kinderen zijn het eigendom van de HEERE, de vrucht van de schoot is Zijn beloning.", r:"Psalm 127:3"},
-  {t:"Dit is de dag die de HEERE gemaakt heeft, laten wij op deze dag ons verheugen en verblijd zijn.", r:"Psalm 118:24"},
-  {t:"Verblijd u altijd in de Heere; ik zeg het opnieuw: Verblijd u.", r:"Filippenzen 4:4"},
-  {t:"Wentel uw weg op de HEERE en vertrouw op Hem: Híj zal het doen.", r:"Psalm 37:5"},
-  {t:"Uw woord is een lamp voor mijn voet en een licht op mijn pad.", r:"Psalm 119:105"},
-  {t:"De HEERE is nabij de gebrokenen van hart, Hij verlost de verbrijzelden van geest.", r:"Psalm 34:19"}
+  {t:"Ik loof U om het ontzaglijke wonder van mijn bestaan, wonderbaarlijk is wat U gemaakt hebt. Ik weet het, tot in het diepst van mijn ziel.", r:"Psalm 139:14"},
+  {t:"Voor alles wat gebeurt is er een uur, een tijd voor alles wat er is onder de hemel.", r:"Prediker 3:1"},
+  {t:"De HEER is mijn herder, het ontbreekt mij aan niets.", r:"Psalm 23:1"},
+  {t:"Wees over niets bezorgd, maar vraag in alle omstandigheden aan God wat u nodig hebt en dank Hem in uw gebeden.", r:"Filippenzen 4:6"},
+  {t:"Leg de last van uw zorgen op Hem, want u ligt Hem na aan het hart.", r:"1 Petrus 5:7"},
+  {t:"Kinderen zijn een geschenk van de HEER, de vrucht van de schoot is een beloning van God.", r:"Psalm 127:3"},
+  {t:"Dit is de dag die de HEER heeft gemaakt, laten wij juichen en ons verheugen.", r:"Psalm 118:24"},
+  {t:"Laat de Heer uw vreugde blijven; ik zeg u nogmaals: wees altijd verheugd.", r:"Filippenzen 4:4"},
+  {t:"Leg je leven in de handen van de HEER, vertrouw op Hem, Hij zal dit voor je doen.", r:"Psalm 37:5"},
+  {t:"Uw woord is een lamp voor mijn voet, een licht op mijn pad.", r:"Psalm 119:105"},
+  {t:"Gebroken mensen is de HEER nabij, Hij redt wie zwaar wordt getroffen.", r:"Psalm 34:19"}
 ];
 function verseOfToday(){
   const d=new Date();
@@ -1925,7 +1925,7 @@ function greetingCardHtml(cycle){
     ${bloemWm}
     <div class="greeting-hi">${greetingText()}</div>
     <div class="greeting-verse">"${v.t}"</div>
-    <div class="greeting-ref">— ${v.r} (HSV)</div>
+    <div class="greeting-ref">— ${v.r} (NBV21)</div>
     <div class="greeting-status ${status.cls}"><span class="dot"></span>${status.label}</div>
     <div class="greeting-phase">${status.why? '<b style="color:var(--text);">'+status.why+'</b><br><br>' : ''}${phaseDescription(cycle)}</div>
   </div>`;
