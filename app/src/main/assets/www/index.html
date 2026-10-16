@@ -2358,6 +2358,24 @@ function makeCyclePdfBase64(cycle){
   return b64;
 }
 
+/** Eén PDF met alle cycli: de lopende bovenop, daarna de afgesloten (nieuwste eerst). */
+function makeAllCyclesPdfBase64(){
+  const { jsPDF } = window.jspdf;
+  const pdf=new jsPDF({ orientation:'landscape', unit:'mm', format:'a4', compress:true });
+  const pw=pdf.internal.pageSize.getWidth()-16, ph=pdf.internal.pageSize.getHeight()-16;
+  const cycles=DATA.cycles.filter(c=>c.days && c.days.length>0).slice().reverse();
+  if(cycles.length===0) cycles.push(huidigeCyclus());
+  cycles.forEach((cycle,i)=>{
+    if(i>0) pdf.addPage();
+    const cv=drawExportCanvas(cycle);
+    const ratio=cv.height/cv.width;
+    let w=pw, h=pw*ratio;
+    if(h>ph){ h=ph; w=ph/ratio; }
+    pdf.addImage(cv.toDataURL('image/png'),'PNG',8,8,w,h,undefined,'FAST');
+  });
+  return pdf.output('datauristring').split(',')[1];
+}
+
 /* ---- Cyclus mailen ---- */
 function buildCycleText(cycle){
   const end=computeInfertileAfterOvulation(cycle);
@@ -2917,7 +2935,7 @@ if(window.Android){
     document.getElementById('autoPdfStop').hidden=!name;
     document.getElementById('autoPdfBtn').textContent = name ? 'Ander bestand kiezen' : 'Kies waar de kaart komt';
     if(!name){
-      el.textContent='Kies één keer een plek, bijvoorbeeld een map op Google Drive. Daarna zet de app de kaart van de lopende cyclus daar steeds opnieuw neer, telkens als je iets invult.';
+      el.textContent='Kies één keer een plek, bijvoorbeeld een map op Google Drive. Daarna houdt de app daar één PDF bij met al je cycli: de lopende op de eerste pagina, de afgesloten daarachter. Hij wordt bijgewerkt telkens als je iets invult.';
       return;
     }
     let fail=false; try{ fail=localStorage.getItem('cyclus_autopdf_fail')==='1'; }catch(e){}
@@ -2933,12 +2951,13 @@ if(window.Android){
       const iso=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
       wanneer = (iso===todayISO() ? 'vandaag' : fmtDateLong(iso))+' om '+tijd;
     }
-    el.textContent='De kaart wordt bijgehouden in ‘'+name+'’. Laatst bijgewerkt: '+wanneer+'.';
+    const n=DATA.cycles.filter(c=>c.days && c.days.length>0).length;
+    el.textContent='Alle cycli ('+n+') worden bijgehouden in ‘'+name+'’, de lopende op de eerste pagina. Laatst bijgewerkt: '+wanneer+'.';
   }
   function updateAutoPdf(){
     if(!Android.autoPdfName()) return;
     let ok=false;
-    try{ ok=Android.writeAutoPdf(makeCyclePdfBase64(huidigeCyclus())); }catch(e){ ok=false; }
+    try{ ok=Android.writeAutoPdf(makeAllCyclesPdfBase64()); }catch(e){ ok=false; }
     try{ localStorage.setItem('cyclus_autopdf_fail', ok?'0':'1'); }catch(e){}
     updateAutoPdfStatus();
   }
