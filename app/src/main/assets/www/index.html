@@ -2917,6 +2917,8 @@ if(window.Android){
     const id=autoPdfCycleId();
     return DATA.cycles.find(c=>c.id===id) || huidigeCyclus();
   }
+  // Pas iets doen als de gegevens geladen zijn.
+  function dataReady(){ return DATA && DATA.cycles && DATA.cycles.length>0; }
   function updateAutoPdfStatus(fout){
     const box=document.getElementById('autoPdfBox'); if(!box) return;
     box.hidden=false;
@@ -2933,6 +2935,7 @@ if(window.Android){
       el.textContent='Bijwerken van ‘'+name+'’ lukte de laatste keer niet. Kies het bestand opnieuw met de knop hieronder.';
       return;
     }
+    if(!dataReady()){ el.textContent='De kaart wordt bijgehouden in ‘'+name+'’.'; return; }
     const c=autoPdfCycle();
     if(c.id!==huidigeCyclus().id){
       el.textContent='Cyclus '+c.nummer+' is afgesloten en bewaard in ‘'+name+'’. Kies een nieuw bestand voor cyclus '+huidigeCyclus().nummer+'.';
@@ -2950,11 +2953,11 @@ if(window.Android){
     el.textContent='De kaart van cyclus '+c.nummer+' wordt bijgehouden in ‘'+name+'’. Laatst bijgewerkt: '+wanneer+'.';
   }
   function pickForCurrent(){
-    Android.pickAutoPdf('Cycluskaart cyclus '+huidigeCyclus().nummer+'.pdf');
+    Android.pickAutoPdf(dataReady() ? 'Cycluskaart cyclus '+huidigeCyclus().nummer+'.pdf' : 'Cycluskaart.pdf');
   }
   let askedNew=false;
   function updateAutoPdf(){
-    if(!Android.autoPdfName()) return;
+    if(!Android.autoPdfName() || !dataReady()) return;
     const c=autoPdfCycle();
     const finished = c.id!==huidigeCyclus().id;
     // Afgesloten cyclus: nog één keer de laatste versie wegschrijven, daarna niet meer aankomen.
@@ -2984,7 +2987,7 @@ if(window.Android){
   window.__autoPdfPicked = (ok)=>{
     if(!ok){ updateAutoPdfStatus(); return; }
     // Nieuw bestand hoort bij de lopende cyclus.
-    setAutoPdfCycle(huidigeCyclus().id);
+    if(dataReady()) setAutoPdfCycle(huidigeCyclus().id);
     try{ localStorage.setItem('cyclus_autopdf_fail','0'); }catch(e){}
     updateAutoPdf();
   };
@@ -2995,8 +2998,7 @@ if(window.Android){
     setAutoPdfCycle('');
     updateAutoPdfStatus();
   });
-  document.getElementById('settingsBtn').addEventListener('click', ()=>updateAutoPdfStatus());
-  updateAutoPdfStatus();
+  document.getElementById('settingsBtn').addEventListener('click', ()=>{ try{ updateAutoPdfStatus(); }catch(e){} });
   // Instellingen: toon wanneer de laatste back-up was
   document.getElementById('settingsBtn').addEventListener('click', updateLastBackupInfo);
   // Herinnering na een maand zonder back-up
@@ -3008,7 +3010,10 @@ if(window.Android){
       const last=Android.autoPdfLast();
       const d=last ? new Date(last) : null;
       const iso=d ? d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0') : '';
-      if(Android.autoPdfName() && (iso!==todayISO() || autoPdfCycle().id!==huidigeCyclus().id)) updateAutoPdf();
+      try{
+        updateAutoPdfStatus();
+        if(Android.autoPdfName() && dataReady() && (iso!==todayISO() || autoPdfCycle().id!==huidigeCyclus().id)) updateAutoPdf();
+      }catch(e){ console.warn('Automatische PDF overgeslagen', e); }
     }, 2500);
     setTimeout(()=>{
       if(countDataPoints(DATA) < 7) return;
