@@ -123,6 +123,13 @@ class MainActivity : Activity() {
                     contentResolver.takePersistableUriPermission(uri,
                         Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
                 } catch (e: Exception) { }
+                // Het vorige bestand blijft gewoon staan; alleen de schrijftoegang ervan geven we terug.
+                autoPrefs().getString("auto_pdf", null)?.takeIf { it != uri.toString() }?.let { old ->
+                    try {
+                        contentResolver.releasePersistableUriPermission(Uri.parse(old),
+                            Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+                    } catch (e: Exception) { }
+                }
                 autoPrefs().edit().putString("auto_pdf", uri.toString()).putString("auto_pdf_name", displayName(uri)).apply()
                 web.evaluateJavascript("window.__autoPdfPicked && window.__autoPdfPicked(true)", null)
             } else {
@@ -190,12 +197,12 @@ class MainActivity : Activity() {
 
         /** Laat kiezen waar de kaart komt (bijv. een map op Google Drive). */
         @JavascriptInterface
-        fun pickAutoPdf() {
+        fun pickAutoPdf(title: String) {
             runOnUiThread {
                 val pick = Intent(Intent.ACTION_CREATE_DOCUMENT)
                     .addCategory(Intent.CATEGORY_OPENABLE)
                     .setType("application/pdf")
-                    .putExtra(Intent.EXTRA_TITLE, "Cycluskaart.pdf")
+                    .putExtra(Intent.EXTRA_TITLE, title.ifBlank { "Cycluskaart.pdf" })
                 try { startActivityForResult(pick, REQ_AUTO_PDF) } catch (e: Exception) { }
             }
         }
