@@ -315,6 +315,12 @@
         Deel de ingevulde cycluskaart als PDF, bijvoorbeeld via mail, WhatsApp of Drive.
         Handig als extra kopie of voor een arts.<b id="setMailEmail" hidden></b></p>
       <button class="secondary" id="setMailSend" style="margin:0;">Deel PDF-kaart</button>
+      <div id="autoPdfBox" hidden style="margin-top:14px;">
+        <span style="font-weight:600; font-size:0.84rem;">Kaart automatisch bijhouden</span>
+        <p class="muted" id="autoPdfStatus" style="font-size:0.76rem; margin:6px 0 10px; line-height:1.5;"></p>
+        <button class="secondary" id="autoPdfBtn" style="margin:0;">Kies waar de kaart komt</button>
+        <button class="secondary" id="autoPdfStop" style="margin-top:8px;" hidden>Stoppen met bijhouden</button>
+      </div>
     </div>
 
     <div style="border-bottom:1px solid var(--line); padding:14px 0;">
@@ -2900,12 +2906,76 @@ if(window.Android){
       return false;
     }
   };
+  // ---- Cycluskaart automatisch bijhouden in één vast PDF-bestand ----
+  // Na elke wijziging (en minstens één keer per dag) wordt de kaart van de lopende cyclus
+  // opnieuw in het gekozen bestand gezet, bijvoorbeeld op Google Drive.
+  function updateAutoPdfStatus(fout){
+    const box=document.getElementById('autoPdfBox'); if(!box) return;
+    box.hidden=false;
+    const name=Android.autoPdfName();
+    const el=document.getElementById('autoPdfStatus');
+    document.getElementById('autoPdfStop').hidden=!name;
+    document.getElementById('autoPdfBtn').textContent = name ? 'Ander bestand kiezen' : 'Kies waar de kaart komt';
+    if(!name){
+      el.textContent='Kies één keer een plek, bijvoorbeeld een map op Google Drive. Daarna zet de app de kaart van de lopende cyclus daar steeds opnieuw neer, telkens als je iets invult.';
+      return;
+    }
+    let fail=false; try{ fail=localStorage.getItem('cyclus_autopdf_fail')==='1'; }catch(e){}
+    if(fout || fail){
+      el.textContent='Bijwerken van ‘'+name+'’ lukte de laatste keer niet. Kies het bestand opnieuw met de knop hieronder.';
+      return;
+    }
+    const last=Android.autoPdfLast();
+    let wanneer='nog niet';
+    if(last){
+      const d=new Date(last);
+      const tijd=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+      const iso=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+      wanneer = (iso===todayISO() ? 'vandaag' : fmtDateLong(iso))+' om '+tijd;
+    }
+    el.textContent='De kaart wordt bijgehouden in ‘'+name+'’. Laatst bijgewerkt: '+wanneer+'.';
+  }
+  function updateAutoPdf(){
+    if(!Android.autoPdfName()) return;
+    let ok=false;
+    try{ ok=Android.writeAutoPdf(makeCyclePdfBase64(huidigeCyclus())); }catch(e){ ok=false; }
+    try{ localStorage.setItem('cyclus_autopdf_fail', ok?'0':'1'); }catch(e){}
+    updateAutoPdfStatus();
+  }
+  let autoPdfTimer=null;
+  const _saveData = saveData;
+  saveData = async function(){
+    await _saveData();
+    // Even wachten, zodat meerdere wijzigingen achter elkaar één keer bijwerken.
+    clearTimeout(autoPdfTimer);
+    autoPdfTimer=setTimeout(updateAutoPdf, 2500);
+  };
+  window.__autoPdfPicked = (ok)=>{
+    if(!ok){ updateAutoPdfStatus(); return; }
+    try{ localStorage.setItem('cyclus_autopdf_fail','0'); }catch(e){}
+    updateAutoPdf();
+  };
+  document.getElementById('autoPdfBtn').addEventListener('click', ()=>Android.pickAutoPdf());
+  document.getElementById('autoPdfStop').addEventListener('click', ()=>{
+    if(!confirm('Stoppen met het automatisch bijhouden van de kaart? Het bestand zelf blijft gewoon staan.')) return;
+    Android.clearAutoPdf();
+    updateAutoPdfStatus();
+  });
+  document.getElementById('settingsBtn').addEventListener('click', ()=>updateAutoPdfStatus());
+  updateAutoPdfStatus();
   // Instellingen: toon wanneer de laatste back-up was
   document.getElementById('settingsBtn').addEventListener('click', updateLastBackupInfo);
   // Herinnering na een maand zonder back-up
   const _reveal = revealApp;
   revealApp = function(){
     _reveal();
+    // Eén keer per dag de kaart bijwerken, ook als er niets is ingevuld (cyclusdag schuift door).
+    setTimeout(()=>{
+      const last=Android.autoPdfLast();
+      const d=last ? new Date(last) : null;
+      const iso=d ? d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0') : '';
+      if(Android.autoPdfName() && iso!==todayISO()) updateAutoPdf();
+    }, 2500);
     setTimeout(()=>{
       if(countDataPoints(DATA) < 7) return;
       let last=null; try{ last=localStorage.getItem('cyclus_last_backup'); }catch(e){}

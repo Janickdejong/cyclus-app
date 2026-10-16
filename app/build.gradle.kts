@@ -11,8 +11,8 @@ android {
         applicationId = "nl.janick.cyclus"
         minSdk = 26
         targetSdk = 34
-        versionCode = 5
-        versionName = "1.4"
+        versionCode = 6
+        versionName = "1.5"
     }
 
     // Vaste sleutel: updates gaan over de oude versie heen en de gegevens blijven staan.

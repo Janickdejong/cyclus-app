@@ -29,6 +29,7 @@ class MainActivity : Activity() {
         private const val HOST = "appassets.androidplatform.net"
         private const val REQ_FILE = 10
         private const val REQ_NOTIF = 11
+        private const val REQ_AUTO_PDF = 12
     }
 
     private lateinit var web: WebView
@@ -114,6 +115,21 @@ class MainActivity : Activity() {
     @Deprecated("Deprecated in Java")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == REQ_AUTO_PDF) {
+            val uri = data?.data
+            if (resultCode == RESULT_OK && uri != null) {
+                // Toegang onthouden, zodat de app het bestand later steeds kan bijwerken.
+                try {
+                    contentResolver.takePersistableUriPermission(uri,
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+                } catch (e: Exception) { }
+                autoPrefs().edit().putString("auto_pdf", uri.toString()).putString("auto_pdf_name", displayName(uri)).apply()
+                web.evaluateJavascript("window.__autoPdfPicked && window.__autoPdfPicked(true)", null)
+            } else {
+                web.evaluateJavascript("window.__autoPdfPicked && window.__autoPdfPicked(false)", null)
+            }
+            return
+        }
         if (requestCode == REQ_FILE) {
             val uri = data?.data
             fileCallback?.onReceiveValue(if (resultCode == RESULT_OK && uri != null) arrayOf(uri) else null)
@@ -142,6 +158,14 @@ class MainActivity : Activity() {
         runOnUiThread { startActivity(Intent.createChooser(send, "Opslaan of delen")) }
     }
 
+    private fun autoPrefs() = getSharedPreferences("cyclus", MODE_PRIVATE)
+
+    private fun displayName(uri: Uri): String = try {
+        contentResolver.query(uri, arrayOf(android.provider.OpenableColumns.DISPLAY_NAME), null, null, null)?.use { c ->
+            if (c.moveToFirst()) c.getString(0) else null
+        } ?: "cycluskaart.pdf"
+    } catch (e: Exception) { "cycluskaart.pdf" }
+
     /** Functies die de webpagina kan aanroepen via window.Android. */
     inner class Bridge {
         @JavascriptInterface
@@ -160,6 +184,52 @@ class MainActivity : Activity() {
         @JavascriptInterface
         fun shareBase64(name: String, base64: String, mime: String) {
             share(name, Base64.decode(base64, Base64.DEFAULT), mime)
+        }
+
+        // ---- Cycluskaart automatisch bijhouden in één vast PDF-bestand ----
+
+        /** Laat kiezen waar de kaart komt (bijv. een map op Google Drive). */
+        @JavascriptInterface
+        fun pickAutoPdf() {
+            runOnUiThread {
+                val pick = Intent(Intent.ACTION_CREATE_DOCUMENT)
+                    .addCategory(Intent.CATEGORY_OPENABLE)
+                    .setType("application/pdf")
+                    .putExtra(Intent.EXTRA_TITLE, "Cycluskaart.pdf")
+                try { startActivityForResult(pick, REQ_AUTO_PDF) } catch (e: Exception) { }
+            }
+        }
+
+        /** Naam van het bestand dat bijgehouden wordt, of leeg als er niets gekozen is. */
+        @JavascriptInterface
+        fun autoPdfName(): String =
+            if (autoPrefs().getString("auto_pdf", null) == null) "" else autoPrefs().getString("auto_pdf_name", "Cycluskaart.pdf") ?: ""
+
+        @JavascriptInterface
+        fun autoPdfLast(): Long = autoPrefs().getLong("auto_pdf_last", 0L)
+
+        /** Het gekozen bestand overschrijven met de nieuwe kaart. Geeft false als dat niet lukt. */
+        @JavascriptInterface
+        fun writeAutoPdf(base64: String): Boolean {
+            val raw = autoPrefs().getString("auto_pdf", null) ?: return false
+            return try {
+                val bytes = Base64.decode(base64, Base64.DEFAULT)
+                contentResolver.openOutputStream(Uri.parse(raw), "wt")?.use { it.write(bytes) } ?: return false
+                autoPrefs().edit().putLong("auto_pdf_last", System.currentTimeMillis()).apply()
+                true
+            } catch (e: Exception) {
+                false
+            }
+        }
+
+        @JavascriptInterface
+        fun clearAutoPdf() {
+            val raw = autoPrefs().getString("auto_pdf", null)
+            if (raw != null) try {
+                contentResolver.releasePersistableUriPermission(Uri.parse(raw),
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+            } catch (e: Exception) { }
+            autoPrefs().edit().remove("auto_pdf").remove("auto_pdf_name").remove("auto_pdf_last").apply()
         }
 
         @JavascriptInterface
